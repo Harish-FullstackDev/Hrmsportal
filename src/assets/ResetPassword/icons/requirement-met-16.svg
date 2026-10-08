@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Validation indicator">
+<circle id="Indicator" cx="8" cy="8" r="7" fill="#38A889"/>
+<path id="Validation mark" d="M4 8L6.66667 12L12 4" stroke="white"/>
+</g>
+</svg>

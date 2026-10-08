@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Password visibility" clip-path="url(#clip0_0_26)">
+<g id="Visibility icon">
+<path id="Vector" d="M10 15.8333C13.1796 15.8333 15.9788 13.5039 17.6086 11.7891C18.5749 10.7724 18.5749 9.22764 17.6086 8.21092C15.9788 6.49611 13.1796 4.16667 10 4.16667C6.8204 4.16667 4.02124 6.49611 2.39142 8.21092C1.42508 9.22764 1.42508 10.7724 2.39142 11.7891C4.02124 13.5039 6.8204 15.8333 10 15.8333ZM12.5 10C12.5 11.3807 11.3807 12.5 10 12.5C8.61929 12.5 7.5 11.3807 7.5 10C7.5 8.61929 8.61929 7.5 10 7.5C11.3807 7.5 12.5 8.61929 12.5 10Z" stroke-width="1.5" stroke="#28303F"/>
+</g>
+<path id="Hidden password slash" d="M3 17L17 3" stroke-width="1.2" stroke="#28303F"/>
+</g>
+<defs>
+<clipPath id="clip0_0_26">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

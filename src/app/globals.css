@@ -8,19 +8,56 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-manrope: var(--font-manrope);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Design tokens from the HR-Management Figma file. */
+@theme {
+  --color-navy-900: #00223d;
+  --color-primary: #003056;
+  --color-ink: #0e2b4b;
+  --color-ink-strong: #10131f;
+  --color-accent: #2aae8d;
+  --color-accent-strong: #269b81;
+  --color-success: #38a889;
+  --color-danger: #e15b6b;
+  --color-danger-strong: #df3651;
+  --color-line: #e7e9e9;
+  --color-field: #dfe3e3;
+  --color-field-soft: #eaeaea;
+  --color-placeholder: #b6bbc1;
+  --color-muted: #72767d;
+  --color-subtle: #a3a8ad;
+}
+
+/*
+ * Pages marked [data-figma-scale] are authored in rem against a 1440×1024
+ * Figma frame (1rem = 16 design px) and fit one screen on desktop.
+ * rem = the tighter of:
+ *   width:  100vw / 1440 × 16  → 1.1111vw
+ *   height: 100vh / 731  × 16  → 2.1888vh
+ * 731 is the smallest height the login frame can take: Figma's 1024 with the
+ * empty space above the form (192) and below it (189) squeezed to 48 and 40.
+ * Every element keeps Figma's size relative to the others; only those gaps
+ * (and the photo crop) absorb the screen height. At 1440×1024 the gaps are
+ * exactly Figma's. 12px floor; the cap stops ballooning past 1920px.
+ */
+@media (min-width: 64rem) {
+  html:has([data-figma-scale]) {
+    font-size: clamp(12px, min(1.1111vw, 2.1888vh), 21.3333px);
+  }
+}
+
+/* Used by the Shimmer skeleton in components/skeletons/SkeletonPrimitives.jsx. */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
 }
