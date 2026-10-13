@@ -19,8 +19,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma 1306:2212 "Login and signup" (Sign Up): the create-account card.
 // Signs up with Supabase, storing the name in the user's metadata. With
-// email confirmation on, Supabase returns no session, so the card says to
-// check the inbox; otherwise the new user goes straight to /dashboard.
+// email confirmation on, Supabase returns no session and emails a code, so
+// the user goes on to /verify-email; otherwise straight to /dashboard.
 export default function CreateYourAccount() {
     const router = useRouter();
     const [email, setEmail] = useState("");
@@ -29,7 +29,6 @@ export default function CreateYourAccount() {
     const [password, setPassword] = useState("");
     const [agreed, setAgreed] = useState(false);
     const [error, setError] = useState(null);
-    const [sentTo, setSentTo] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
     const edit = (setter) => (e) => {
@@ -64,7 +63,7 @@ export default function CreateYourAccount() {
             return;
         }
         if (!data.session) {
-            setSentTo(email);
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
             return;
         }
 
@@ -130,11 +129,6 @@ export default function CreateYourAccount() {
                 </Checkbox>
 
                 {error && <FormMessage>{error}</FormMessage>}
-                {sentTo && (
-                    <FormMessage tone="success">
-                        Check {sentTo} for a link to confirm your account.
-                    </FormMessage>
-                )}
 
                 <SubmitButton busy={submitting}>{submitting ? "Creating Account…" : "Create Account"}</SubmitButton>
             </form>

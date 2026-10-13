@@ -1,0 +1,167 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+
+import { createClient } from "@/lib/supabase/client";
+import {
+    AuthCard,
+    FormMessage,
+    SecondaryButton,
+    SubmitButton,
+    textClass,
+} from "@/components/CommonComponents/AuthFormControls";
+
+const CODE_LENGTH = 6;
+const linkClass =
+    "text-action underline [text-underline-position:from-font] decoration-from-font hover:no-underline";
+
+// Figma 1306:2411 "Login and signup" (Verify your email): the step after
+// sign-up. Supabase emails a 6-digit code (the "Confirm signup" email
+// template must include {{ .Token }}); verifying it signs the user in and
+// shows /email-verified. Reads the address from ?email=, so the page wraps this
+// in <Suspense>.
+export default function VerifyYourEmail() {
+    const router = useRouter();
+    const email = useSearchParams().get("email") ?? "";
+    const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(""));
+    const [error, setError] = useState(null);
+    const [notice, setNotice] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const inputs = useRef([]);
+
+    const focus = (index) => inputs.current[Math.max(0, Math.min(index, CODE_LENGTH - 1))]?.focus();
+
+    const setDigit = (index, value) => {
+        const digit = value.replace(/\D/g, "").slice(-1);
+        setDigits((prev) => prev.map((d, i) => (i === index ? digit : d)));
+        setError(null);
+        if (digit) focus(index + 1);
+    };
+
+    const handleKeyDown = (index, event) => {
+        if (event.key === "Backspace" && !digits[index]) focus(index - 1);
+        if (event.key === "ArrowLeft") focus(index - 1);
+        if (event.key === "ArrowRight") focus(index + 1);
+    };
+
+    const handlePaste = (event) => {
+        const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, CODE_LENGTH);
+        if (!pasted) return;
+        event.preventDefault();
+        setDigits(Array.from({ length: CODE_LENGTH }, (_, i) => pasted[i] ?? ""));
+        setError(null);
+        focus(pasted.length);
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (submitting) return;
+
+        const token = digits.join("");
+        if (token.length < CODE_LENGTH) {
+            setError(`Enter the ${CODE_LENGTH}-digit code from your email.`);
+            return;
+        }
+
+        setSubmitting(true);
+        setError(null);
+        setNotice(null);
+        const supabase = createClient();
+        const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+        setSubmitting(false);
+
+        if (verifyError) {
+            setError(
+                verifyError.code === "otp_expired"
+                    ? "This code is wrong or has expired. Check it, or resend a new one."
+                    : verifyError.message,
+            );
+            return;
+        }
+
+        router.push("/email-verified");
+    };
+
+    const handleResend = async () => {
+        setError(null);
+        setNotice(null);
+        const supabase = createClient();
+        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
+        if (resendError) setError(resendError.message);
+        else setNotice(`A new code is on its way to ${email}.`);
+    };
+
+    return (
+        <AuthCard
+            titleId="verify-email-title"
+            title="Verify your email"
+            description={
+                // Figma: the sentence, an empty 14 line, then the address row,
+                // all set solid (14 per line) for a 42 block.
+                <span className="block leading-none">
+                    We&apos;ve sent a {CODE_LENGTH}-digit verification code to your registered email address.
+                    <span className="mt-[14px] flex items-center justify-between gap-4">
+                        <span className="min-w-0 truncate text-muted-ink">{email}</span>
+                        <Link href="/sign-up" className={`shrink-0 ${linkClass}`}>
+                            Change Email
+                        </Link>
+                    </span>
+                </span>
+            }
+        >
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+                <fieldset className="flex flex-col">
+                    <legend className={`mb-2 ${textClass}`}>
+                        Verification Code <span className="text-required">*</span>
+                    </legend>
+                    <div className="flex justify-between gap-2" onPaste={handlePaste}>
+                        {digits.map((digit, i) => (
+                            <span key={i} className="relative h-14 w-[61px] min-w-0 shrink">
+                                <input
+                                    ref={(el) => (inputs.current[i] = el)}
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete={i === 0 ? "one-time-code" : "off"}
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => setDigit(i, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(i, e)}
+                                    onFocus={(e) => e.target.select()}
+                                    aria-label={`Digit ${i + 1} of ${CODE_LENGTH}`}
+                                    aria-invalid={error ? true : undefined}
+                                    className={`peer size-full rounded-lg border bg-white text-center text-base text-ink outline-none transition-colors focus:border-action ${
+                                        error ? "border-required" : "border-border-default"
+                                    }`}
+                                />
+                                {/* Figma's empty-box mark: an 18×2 dash. */}
+                                {!digit && (
+                                    <span
+                                        aria-hidden
+                                        className="pointer-events-none absolute top-1/2 left-1/2 h-[2px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-[1px] bg-[#d9d9d9] peer-focus:hidden"
+                                    />
+                                )}
+                            </span>
+                        ))}
+                    </div>
+                </fieldset>
+
+                {error && <FormMessage>{error}</FormMessage>}
+                {notice && <FormMessage tone="success">{notice}</FormMessage>}
+
+                <div className="flex flex-col gap-2">
+                    <SubmitButton busy={submitting}>{submitting ? "Verifying…" : "Verify OTP"}</SubmitButton>
+                    <SecondaryButton href="/">Cancel</SecondaryButton>
+                </div>
+            </form>
+
+            <p className={textClass}>
+                Didn&apos;t receive the code?{" "}
+                <button type="button" onClick={handleResend} className={`cursor-pointer ${linkClass}`}>
+                    Resend Code
+                </button>
+            </p>
+        </AuthCard>
+    );
+}
