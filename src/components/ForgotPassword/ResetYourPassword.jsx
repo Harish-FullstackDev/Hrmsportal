@@ -3,61 +3,64 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Button, { ButtonLink } from "@/components/CommonComponents/Button";
-import LogoMark from "@/components/CommonComponents/LogoMark";
+import {
+    AuthCard,
+    FormMessage,
+    SecondaryLink,
+    SubmitButton,
+    TextField,
+} from "@/components/CommonComponents/AuthFormControls";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Figma "Forgot password": heading, registered email field and two actions.
+// Reset password card, in the same frame and controls as the sign-in card:
+// registered email, send code, cancel back to sign-in.
 export default function ResetYourPassword() {
     const router = useRouter();
     const [email, setEmail] = useState("");
-    const emailValid = EMAIL_PATTERN.test(email);
+    const [error, setError] = useState(null);
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        if (!emailValid) return;
+        if (!EMAIL_PATTERN.test(email)) {
+            setError("Enter a valid email address.");
+            return;
+        }
         // TODO: send the reset code via Supabase before moving to the OTP step.
         router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     };
 
     return (
-        <>
-            <LogoMark />
-
-            <div className="flex flex-col gap-4 pt-8 text-center">
-                <h1 className="text-[32px] leading-10 font-semibold text-ink">Reset your password</h1>
-                <p className="text-lg leading-[27px] text-[#202020]">
-                    Enter your email address and we’ll send you password reset instructions.
-                </p>
-            </div>
-
-            <form onSubmit={handleSubmit} noValidate>
-                <div className="flex flex-col gap-3 pt-8">
-                    <label htmlFor="email" className="text-sm leading-5 text-ink">
-                        Registered Email<span className="text-[#ec4375]">*</span>
-                    </label>
-                    <input
+        <AuthCard
+            titleId="reset-password-title"
+            title="Reset Your Password"
+            description="Enter your registered email address to receive a password reset verification code."
+        >
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                    <TextField
                         id="email"
+                        label="Email Address"
+                        required
                         type="email"
                         autoComplete="email"
-                        required
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Input your registered email"
-                        className="h-[54px] w-full rounded-[10px] border border-[#e8e8e8] bg-white px-[18px] text-sm text-ink outline-none placeholder:text-[#b2b7bf] focus:border-accent"
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            setError(null);
+                        }}
+                        placeholder="yourname@email.com"
+                        invalid={Boolean(error)}
+                        aria-describedby={error ? "reset-password-error" : undefined}
                     />
+                    {error && <FormMessage id="reset-password-error">{error}</FormMessage>}
                 </div>
 
-                <div className="flex flex-col gap-4 pt-[34px]">
-                    <Button type="submit" disabled={!emailValid}>
-                        Send Reset Instructions
-                    </Button>
-                    <ButtonLink href="/" variant="outline">
-                        Back To Login
-                    </ButtonLink>
+                <div className="flex flex-col gap-2">
+                    <SubmitButton>Send Verification Code</SubmitButton>
+                    <SecondaryLink href="/">Cancel</SecondaryLink>
                 </div>
             </form>
-        </>
+        </AuthCard>
     );
 }

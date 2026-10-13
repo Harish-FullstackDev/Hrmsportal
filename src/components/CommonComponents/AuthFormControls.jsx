@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import PasswordInput from "@/components/CommonComponents/PasswordInput";
 
@@ -123,6 +124,18 @@ export function SubmitButton({ busy, children }) {
             {children}
             <Image src={iconArrowRight} alt="" className="size-[14px]" />
         </button>
+    );
+}
+
+// Full-width outline link under the primary button (Cancel / Back).
+export function SecondaryLink({ href, children }) {
+    return (
+        <Link
+            href={href}
+            className={`flex w-full items-center justify-center rounded-lg border border-action bg-white px-3 py-2.5 text-action transition-colors hover:bg-action/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${textClass}`}
+        >
+            {children}
+        </Link>
     );
 }
 
