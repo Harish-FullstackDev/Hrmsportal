@@ -4,10 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 
 // Password field with a show/hide toggle. `hiddenIcon` / `visibleIcon` are
-// static SVG imports; each renders at its intrinsic size, in rem so it scales
-// with pages that use data-figma-scale.
+// static SVG imports; each renders at its intrinsic size.
 export default function PasswordInput({
     fieldClassName = "",
+    focusClassName = "focus-within:border-accent",
+    toggleClassName = "size-[2.125rem]",
     hiddenIcon,
     visibleIcon,
     className = "",
@@ -17,7 +18,7 @@ export default function PasswordInput({
     const icon = visible ? visibleIcon : hiddenIcon;
 
     return (
-        <div className={`flex items-center bg-white focus-within:border-accent ${fieldClassName}`}>
+        <div className={`flex items-center bg-white ${focusClassName} ${fieldClassName}`}>
             <input
                 {...inputProps}
                 type={visible ? "text" : "password"}
@@ -28,12 +29,12 @@ export default function PasswordInput({
                 onClick={() => setVisible((v) => !v)}
                 aria-label={visible ? "Hide password" : "Show password"}
                 aria-pressed={visible}
-                className="grid size-[2.125rem] shrink-0 place-items-center rounded-md focus-visible:outline-2 focus-visible:outline-accent"
+                className={`grid ${toggleClassName} shrink-0 place-items-center rounded-md focus-visible:outline-2 focus-visible:outline-accent`}
             >
                 <Image
                     src={icon}
                     alt=""
-                    style={{ width: `${icon.width / 16}rem`, height: `${icon.height / 16}rem` }}
+                    style={{ width: icon.width, height: icon.height }}
                 />
             </button>
         </div>
