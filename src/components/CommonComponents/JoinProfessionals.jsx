@@ -8,10 +8,11 @@ import avatar5 from "@/assets/CommonComponents/avatars/avatar-5.jpg";
 
 const AVATARS = [avatar1, avatar2, avatar3, avatar4, avatar5];
 
-// Figma 1306:2568: overlapping avatars + tagline at the bottom of the page.
-export default function JoinProfessionals() {
+// Figma 1306:2568 / 1306:2520: overlapping avatars + tagline, pinned 68
+// above the bottom of the sign-in and sign-up screens.
+export default function JoinProfessionals({ className = "" }) {
     return (
-        <div className="flex items-center gap-4">
+        <div className={`flex items-center gap-4 ${className}`}>
             <div className="flex shrink-0">
                 {AVATARS.map((src, i) => (
                     <Image

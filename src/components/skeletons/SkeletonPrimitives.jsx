@@ -62,9 +62,9 @@ export function SkeletonCenteredAuth({ fields = 1, children }) {
     );
 }
 
-// Shape of the sign-in page: header bar, headline on the left, card on the
-// right, avatar strip at the bottom.
-export function SkeletonLogin() {
+// Shape of the sign-in / sign-up pages: header bar, headline on the left,
+// card on the right, avatar strip at the bottom.
+export function SkeletonLogin({ fields = 2 }) {
     return (
         <div className="flex min-h-dvh flex-1 flex-col bg-white">
             <div className="border-b border-primary-200">
@@ -87,8 +87,9 @@ export function SkeletonLogin() {
                     <div className="flex w-full flex-col gap-6 rounded-2xl border border-[rgba(229,231,235,0.8)] p-8 lg:w-[520px]">
                         <Shimmer className="h-4 w-48" rounded="rounded-md" />
                         <Shimmer className="h-10 w-full" rounded="rounded-md" />
-                        <SkeletonField inputClassName="h-[47.6px]" />
-                        <SkeletonField inputClassName="h-[47.6px]" />
+                        {Array.from({ length: fields }, (_, i) => (
+                            <SkeletonField key={i} inputClassName="h-[46px]" />
+                        ))}
                         <Shimmer className="h-10 w-full" rounded="rounded-lg" />
                     </div>
                 </div>

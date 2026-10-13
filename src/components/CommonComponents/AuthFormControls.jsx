@@ -1,0 +1,140 @@
+import Image from "next/image";
+
+import PasswordInput from "@/components/CommonComponents/PasswordInput";
+
+import iconEye from "@/assets/CommonComponents/icons/eye-16.svg";
+import iconArrowRight from "@/assets/CommonComponents/icons/arrow-right-14.svg";
+
+// Building blocks of the careers-portal auth card (Figma "Login and signup"
+// component, variants Sign In 1306:2612 and Sign Up 1306:2212).
+
+// Figma sets 14px text at 140% but lays every line out in a 20 box (labels,
+// intro, button, footer), so 20 is used to keep Figma's block heights.
+export const textClass = "text-sm leading-5";
+
+// Figma's field is 46 tall: 13 from the outer edge to a 20 line (1 border +
+// 12 padding here).
+const fieldClass = "rounded-lg border bg-white p-3 transition-colors";
+const borderClass = (invalid) => (invalid ? "border-required" : "border-border-default");
+
+// The white card: eyebrow title, intro line, then the screen's form.
+// 1 border + 32 padding = Figma's 33; 24 between every block.
+export function AuthCard({ titleId, title, description, children }) {
+    return (
+        <section
+            aria-labelledby={titleId}
+            className="flex w-full min-w-0 flex-col gap-6 overflow-hidden rounded-2xl border border-[rgba(229,231,235,0.8)] bg-white p-6 shadow-[4px_4px_12px_rgba(0,0,0,0.05)] backdrop-blur-[8px] sm:p-8"
+        >
+            <h2 id={titleId} className="text-sm leading-4 font-medium tracking-[0.05em] uppercase">
+                {title}
+            </h2>
+            <p className={textClass}>{description}</p>
+            {children}
+        </section>
+    );
+}
+
+function FieldLabel({ htmlFor, required, children }) {
+    return (
+        <label htmlFor={htmlFor} className={textClass}>
+            {children}
+            {required && (
+                <>
+                    {" "}
+                    <span className="text-required">*</span>
+                </>
+            )}
+        </label>
+    );
+}
+
+// Label + text input, 8 apart. `required` only draws the red asterisk
+// (sign-in has them, sign-up doesn't); validation is the form's job.
+export function TextField({ id, label, required = false, invalid = false, className = "", ...inputProps }) {
+    return (
+        <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
+            <FieldLabel htmlFor={id} required={required}>
+                {label}
+            </FieldLabel>
+            <input
+                id={id}
+                aria-invalid={invalid || undefined}
+                className={`${fieldClass} ${borderClass(invalid)} ${textClass} w-full outline-none placeholder:text-hint focus:border-action`}
+                {...inputProps}
+            />
+        </div>
+    );
+}
+
+// Label + password input with the eye toggle 13 in from the right edge. The
+// design has a single eye icon, so it is used for both states.
+export function PasswordField({ id, label, required = false, invalid = false, children, ...inputProps }) {
+    return (
+        <div className="flex flex-col gap-2">
+            <FieldLabel htmlFor={id} required={required}>
+                {label}
+            </FieldLabel>
+            <PasswordInput
+                id={id}
+                aria-invalid={invalid || undefined}
+                fieldClassName={`${fieldClass} ${borderClass(invalid)} gap-2`}
+                focusClassName="focus-within:border-action"
+                toggleClassName="size-4"
+                className={`${textClass} min-h-5 placeholder:text-hint`}
+                hiddenIcon={iconEye}
+                visibleIcon={iconEye}
+                {...inputProps}
+            />
+            {children}
+        </div>
+    );
+}
+
+// 16px checkbox + label, 8 apart. The two Figma variants draw the box
+// differently, so the screen passes its box style.
+export function Checkbox({ checked, onChange, boxClassName, children, ...inputProps }) {
+    return (
+        <label className={`flex cursor-pointer items-center gap-2 text-neutral-700 ${textClass}`}>
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={onChange}
+                className="peer sr-only"
+                {...inputProps}
+            />
+            <span
+                className={`grid size-4 shrink-0 place-items-center border bg-white peer-checked:border-action peer-checked:bg-action peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-action ${boxClassName}`}
+            >
+                {checked && <span className="mb-[2px] h-2 w-[5px] rotate-45 border-r-[1.5px] border-b-[1.5px] border-white" />}
+            </span>
+            {children}
+        </label>
+    );
+}
+
+// Full-width primary button with the trailing arrow (Figma "Button").
+export function SubmitButton({ busy, children }) {
+    return (
+        <button
+            type="submit"
+            disabled={busy}
+            className={`flex w-full items-center justify-center gap-3 rounded-lg bg-action px-3 py-2.5 text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition-colors hover:bg-action/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-wait disabled:opacity-70 ${textClass}`}
+        >
+            {children}
+            <Image src={iconArrowRight} alt="" className="size-[14px]" />
+        </button>
+    );
+}
+
+// Error (red) or success (green) line in the form. Not in the design.
+export function FormMessage({ id, tone = "error", children }) {
+    return (
+        <p
+            id={id}
+            role={tone === "error" ? "alert" : "status"}
+            className={`${textClass} ${tone === "error" ? "text-required" : "text-success"}`}
+        >
+            {children}
+        </p>
+    );
+}
