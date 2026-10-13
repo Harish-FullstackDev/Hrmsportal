@@ -6,7 +6,7 @@ export const metadata = {
     title: "OTP verification · HRMS Portal",
 };
 
-// OtpVerification reads ?email= with useSearchParams, which needs a Suspense
+// VerifyYourEmail reads ?email= with useSearchParams, which needs a Suspense
 // boundary under cacheComponents.
 export default function Page() {
     return (

@@ -1,15 +1,14 @@
 "use client";
 
-import CenteredAuthLayout from "@/components/CommonComponents/CenteredAuthLayout";
+import AuthPageLayout from "@/components/CommonComponents/AuthPageLayout";
 import UpdateYourPassword from "@/components/ResetPassword/UpdateYourPassword";
 
-import contoursBg from "@/assets/ResetPassword/contours-bg.svg";
-
+// Same frame as the sign-in page (Figma 1306:2565), with the new-password card.
 const page = () => {
     return (
-        <CenteredAuthLayout contours={contoursBg}>
+        <AuthPageLayout topClassName="lg:pt-[51px]" cardClassName="lg:mb-8">
             <UpdateYourPassword />
-        </CenteredAuthLayout>
+        </AuthPageLayout>
     );
 };
 
