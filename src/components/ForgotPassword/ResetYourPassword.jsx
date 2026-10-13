@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/client";
-
+import { sendRecoveryCode } from "@/lib/auth/codeActions";
 import {
     AuthCard,
     FormMessage,
@@ -16,7 +15,7 @@ import {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Reset password card, in the same frame and controls as the sign-in card:
-// registered email, send code, cancel back to sign-in. Supabase emails a
+// registered email, send code, cancel back to sign-in. The server emails a
 // 6-digit recovery code and the user goes on to /verify-otp.
 export default function ResetYourPassword() {
     const router = useRouter();
@@ -34,16 +33,15 @@ export default function ResetYourPassword() {
 
         setSubmitting(true);
         setError(null);
-        const supabase = createClient();
-        const { error: sendError } = await supabase.auth.resetPasswordForEmail(email);
+        const result = await sendRecoveryCode(email);
         setSubmitting(false);
 
-        if (sendError) {
-            setError(sendError.message);
+        if (result.error) {
+            setError(result.error);
             return;
         }
 
-        router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+        router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     };
 
     return (

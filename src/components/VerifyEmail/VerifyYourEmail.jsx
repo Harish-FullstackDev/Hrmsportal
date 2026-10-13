@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
+import { resendSignupCode, sendRecoveryCode } from "@/lib/auth/codeActions";
 import {
     AuthCard,
     FormMessage,
@@ -18,14 +19,12 @@ const linkClass =
     "text-action underline [text-underline-position:from-font] decoration-from-font hover:no-underline";
 
 // Figma 1306:2411 "Login and signup" (Verify your email): the step after
-// sign-up. Supabase emails a 6-digit code (the "Confirm signup" email
-// template must include {{ .Token }}); verifying it signs the user in and
-// shows /email-verified. Reads the address from ?email=, so the page wraps this
+// sign-up. The server emails a 6-digit code (lib/auth/codeActions);
+// verifying it signs the user in and shows /email-verified. Reads the address from ?email=, so the page wraps this
 // in <Suspense>.
 //
-// The same card is the forgot-password OTP step (flow="recovery"): the code
-// comes from the "Reset Password" email template (also needs {{ .Token }}),
-// verifying it signs the user in and goes on to /reset-password.
+// The same card is the forgot-password OTP step (flow="recovery"): verifying
+// the recovery code signs the user in and goes on to /reset-password.
 const FLOWS = {
     signup: { type: "email", next: "/email-verified", changeEmailHref: "/sign-up" },
     recovery: { type: "recovery", next: "/reset-password", changeEmailHref: "/forgot-password" },
@@ -97,12 +96,8 @@ export default function VerifyYourEmail({ flow = "signup" }) {
     const handleResend = async () => {
         setError(null);
         setNotice(null);
-        const supabase = createClient();
-        const { error: resendError } =
-            flow === "recovery"
-                ? await supabase.auth.resetPasswordForEmail(email)
-                : await supabase.auth.resend({ type: "signup", email });
-        if (resendError) setError(resendError.message);
+        const result = await (flow === "recovery" ? sendRecoveryCode(email) : resendSignupCode(email));
+        if (result.error) setError(result.error);
         else setNotice(`A new code is on its way to ${email}.`);
     };
 

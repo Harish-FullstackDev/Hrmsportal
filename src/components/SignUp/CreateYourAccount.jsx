@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { createClient } from "@/lib/supabase/client";
+import { signUpWithCode } from "@/lib/auth/codeActions";
 import {
     AuthCard,
     Checkbox,
@@ -18,9 +18,8 @@ import {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma 1306:2212 "Login and signup" (Sign Up): the create-account card.
-// Signs up with Supabase, storing the name in the user's metadata. With
-// email confirmation on, Supabase returns no session and emails a code, so
-// the user goes on to /verify-email; otherwise straight to /dashboard.
+// Creates the unconfirmed Supabase user (name in the user's metadata) on the
+// server, which emails a 6-digit code; the user goes on to /verify-email.
 export default function CreateYourAccount() {
     const router = useRouter();
     const [email, setEmail] = useState("");
@@ -47,28 +46,15 @@ export default function CreateYourAccount() {
 
         setSubmitting(true);
         setError(null);
-        const supabase = createClient();
-        const { data, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { first_name: firstName.trim(), last_name: lastName.trim() },
-                emailRedirectTo: `${window.location.origin}/dashboard`,
-            },
-        });
+        const result = await signUpWithCode({ email, password, firstName, lastName });
         setSubmitting(false);
 
-        if (signUpError) {
-            setError(signUpError.message);
-            return;
-        }
-        if (!data.session) {
-            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        if (result.error) {
+            setError(result.error);
             return;
         }
 
-        router.push("/dashboard");
-        router.refresh();
+        router.push(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     };
 
     return (
