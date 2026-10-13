@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { createClient } from "@/lib/supabase/client";
+
 import {
     AuthCard,
     FormMessage,
@@ -14,19 +16,33 @@ import {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Reset password card, in the same frame and controls as the sign-in card:
-// registered email, send code, cancel back to sign-in.
+// registered email, send code, cancel back to sign-in. Supabase emails a
+// 6-digit recovery code and the user goes on to /verify-otp.
 export default function ResetYourPassword() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [error, setError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
+        if (submitting) return;
         if (!EMAIL_PATTERN.test(email)) {
             setError("Enter a valid email address.");
             return;
         }
-        // TODO: send the reset code via Supabase before moving to the OTP step.
+
+        setSubmitting(true);
+        setError(null);
+        const supabase = createClient();
+        const { error: sendError } = await supabase.auth.resetPasswordForEmail(email);
+        setSubmitting(false);
+
+        if (sendError) {
+            setError(sendError.message);
+            return;
+        }
+
         router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     };
 
@@ -57,7 +73,9 @@ export default function ResetYourPassword() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    <SubmitButton>Send Verification Code</SubmitButton>
+                    <SubmitButton busy={submitting}>
+                        {submitting ? "Sending Code…" : "Send Verification Code"}
+                    </SubmitButton>
                     <SecondaryLink href="/">Cancel</SecondaryLink>
                 </div>
             </form>

@@ -26,42 +26,6 @@ export function SkeletonField({ inputClassName = "h-14" }) {
     );
 }
 
-// Footer line under every auth screen.
-export function SkeletonLegalFooter() {
-    return (
-        <div className="flex items-center gap-3" aria-hidden="true">
-            <Shimmer className="h-3 w-48" rounded="rounded-md" />
-            <Shimmer className="h-3 w-24" rounded="rounded-md" />
-            <Shimmer className="h-3 w-20" rounded="rounded-md" />
-        </div>
-    );
-}
-
-// Shape of CenteredAuthLayout: logo mark, heading, description, then the
-// screen's fields (or custom children) and the submit button.
-export function SkeletonCenteredAuth({ fields = 1, children }) {
-    return (
-        <div className="flex min-h-screen flex-1 flex-col bg-white">
-            <div className="flex flex-1 justify-center px-4 pt-[clamp(3rem,24vh,15.625rem)] pb-16 sm:px-6">
-                <div className="flex w-full max-w-[480px] flex-col items-center gap-4">
-                    <Shimmer className="h-10 w-12" rounded="rounded-md" />
-                    <Shimmer className="mt-4 h-9 w-72" />
-                    <Shimmer className="h-5 w-full" rounded="rounded-md" />
-                    <Shimmer className="h-5 w-2/3" rounded="rounded-md" />
-                    <div className="mt-6 flex w-full flex-col gap-6">
-                        {children ??
-                            Array.from({ length: fields }, (_, i) => <SkeletonField key={i} />)}
-                        <Shimmer className="h-14 w-full" rounded="rounded-[10px]" />
-                    </div>
-                </div>
-            </div>
-            <div className="mx-auto w-full max-w-[480px] px-4 pb-[26px] sm:px-0">
-                <SkeletonLegalFooter />
-            </div>
-        </div>
-    );
-}
-
 // Shape of the sign-in / sign-up pages: header bar, headline on the left,
 // card on the right, avatar strip at the bottom.
 export function SkeletonLogin({ fields = 2 }) {

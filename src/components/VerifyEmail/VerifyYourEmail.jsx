@@ -22,7 +22,17 @@ const linkClass =
 // template must include {{ .Token }}); verifying it signs the user in and
 // shows /email-verified. Reads the address from ?email=, so the page wraps this
 // in <Suspense>.
-export default function VerifyYourEmail() {
+//
+// The same card is the forgot-password OTP step (flow="recovery"): the code
+// comes from the "Reset Password" email template (also needs {{ .Token }}),
+// verifying it signs the user in and goes on to /reset-password.
+const FLOWS = {
+    signup: { type: "email", next: "/email-verified", changeEmailHref: "/sign-up" },
+    recovery: { type: "recovery", next: "/reset-password", changeEmailHref: "/forgot-password" },
+};
+
+export default function VerifyYourEmail({ flow = "signup" }) {
+    const { type, next, changeEmailHref } = FLOWS[flow];
     const router = useRouter();
     const email = useSearchParams().get("email") ?? "";
     const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(""));
@@ -69,7 +79,7 @@ export default function VerifyYourEmail() {
         setError(null);
         setNotice(null);
         const supabase = createClient();
-        const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+        const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type });
         setSubmitting(false);
 
         if (verifyError) {
@@ -81,14 +91,17 @@ export default function VerifyYourEmail() {
             return;
         }
 
-        router.push("/email-verified");
+        router.push(next);
     };
 
     const handleResend = async () => {
         setError(null);
         setNotice(null);
         const supabase = createClient();
-        const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
+        const { error: resendError } =
+            flow === "recovery"
+                ? await supabase.auth.resetPasswordForEmail(email)
+                : await supabase.auth.resend({ type: "signup", email });
         if (resendError) setError(resendError.message);
         else setNotice(`A new code is on its way to ${email}.`);
     };
@@ -104,7 +117,7 @@ export default function VerifyYourEmail() {
                     We&apos;ve sent a {CODE_LENGTH}-digit verification code to your registered email address.
                     <span className="mt-[14px] flex items-center justify-between gap-4">
                         <span className="min-w-0 truncate text-muted-ink">{email}</span>
-                        <Link href="/sign-up" className={`shrink-0 ${linkClass}`}>
+                        <Link href={changeEmailHref} className={`shrink-0 ${linkClass}`}>
                             Change Email
                         </Link>
                     </span>

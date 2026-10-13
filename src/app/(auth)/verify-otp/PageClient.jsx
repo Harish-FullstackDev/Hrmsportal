@@ -1,15 +1,15 @@
 "use client";
 
-import CenteredAuthLayout from "@/components/CommonComponents/CenteredAuthLayout";
-import OtpVerification from "@/components/VerifyOtp/OtpVerification";
+import AuthPageLayout from "@/components/CommonComponents/AuthPageLayout";
+import VerifyYourEmail from "@/components/VerifyEmail/VerifyYourEmail";
 
-import contoursBg from "@/assets/VerifyOtp/contours-bg.svg";
-
+// Forgot-password OTP step: the verify-email card (Figma 1306:2758) in the
+// same frame, checking a recovery code instead of a sign-up one.
 const page = () => {
     return (
-        <CenteredAuthLayout contours={contoursBg}>
-            <OtpVerification />
-        </CenteredAuthLayout>
+        <AuthPageLayout topClassName="lg:pt-[62px]" cardClassName="lg:mb-8">
+            <VerifyYourEmail flow="recovery" />
+        </AuthPageLayout>
     );
 };
 

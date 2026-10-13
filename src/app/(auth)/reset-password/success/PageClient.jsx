@@ -1,15 +1,15 @@
 "use client";
 
-import CenteredAuthLayout from "@/components/CommonComponents/CenteredAuthLayout";
-import PasswordChangedConfirmation from "@/components/ResetPasswordSuccess/PasswordChangedConfirmation";
+import AuthPageLayout from "@/components/CommonComponents/AuthPageLayout";
+import PasswordResetSuccessfully from "@/components/ResetPasswordSuccess/PasswordResetSuccessfully";
 
-import contoursBg from "@/assets/ResetPasswordSuccess/contours-bg.svg";
-
+// Same frame and card as /email-verified (Figma 1306:2855), shown after the
+// new password is saved.
 const page = () => {
     return (
-        <CenteredAuthLayout contours={contoursBg}>
-            <PasswordChangedConfirmation />
-        </CenteredAuthLayout>
+        <AuthPageLayout topClassName="lg:pt-[62px]" cardClassName="lg:mb-8">
+            <PasswordResetSuccessfully />
+        </AuthPageLayout>
     );
 };
 
