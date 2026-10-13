@@ -62,32 +62,38 @@ export function SkeletonCenteredAuth({ fields = 1, children }) {
     );
 }
 
-// Shape of the login page: photo + brand panel on desktop, form on the right.
+// Shape of the sign-in page: header bar, headline on the left, card on the
+// right, avatar strip at the bottom.
 export function SkeletonLogin() {
     return (
-        <div className="grid min-h-screen flex-1 bg-white lg:h-dvh lg:min-h-[45.6875rem] lg:grid-cols-2">
-            <div className="hidden flex-col bg-navy-900 lg:flex">
-                <div className="min-h-0 w-full flex-1 bg-slate-700/40" />
-                <div className="flex flex-col gap-6 px-12 pt-11 pb-[4.3125rem]">
-                    <div className="h-8 w-40 rounded-md bg-white/10" />
-                    <div className="h-12 w-4/5 rounded-lg bg-white/10" />
-                    <div className="h-12 w-3/5 rounded-lg bg-white/10" />
-                    <div className="h-5 w-2/3 rounded-md bg-white/10" />
+        <div className="flex min-h-dvh flex-1 flex-col bg-white">
+            <div className="border-b border-primary-200">
+                <div className="flex w-full items-center justify-between px-4 pt-6 pb-4 sm:px-16 lg:pt-8 lg:pb-6">
+                    <div className="flex gap-8">
+                        <Shimmer className="h-6 w-24" rounded="rounded-md" />
+                        <Shimmer className="h-6 w-28" rounded="rounded-md" />
+                    </div>
+                    <Shimmer className="h-8 w-40" rounded="rounded-md" />
                 </div>
             </div>
-            <div className="flex flex-col items-center px-4 pt-16 pb-6 sm:px-12 lg:pt-[7rem]">
-                <div className="flex w-full max-w-[30rem] flex-col gap-6 lg:pt-[5rem]">
-                    <Shimmer className="mx-auto h-9 w-72" />
-                    <SkeletonField inputClassName="h-[3.625rem]" />
-                    <SkeletonField inputClassName="h-[3.625rem]" />
-                    <Shimmer className="h-[3.5625rem] w-full" rounded="rounded-lg" />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Shimmer className="h-[3.5625rem]" rounded="rounded-lg" />
-                        <Shimmer className="h-[3.5625rem]" rounded="rounded-lg" />
+            <div className="flex w-full flex-1 flex-col px-4 pt-10 pb-10 sm:px-16 lg:pt-[51px] lg:pb-[68px]">
+                <div className="flex flex-col gap-10 lg:flex-row lg:justify-between xl:pr-[72px]">
+                    <div className="flex flex-col gap-3 lg:w-[462px]">
+                        <Shimmer className="h-12 w-full" />
+                        <Shimmer className="h-12 w-1/3" />
+                        <Shimmer className="mt-5 h-5 w-11/12" rounded="rounded-md" />
+                        <Shimmer className="h-5 w-1/2" rounded="rounded-md" />
+                    </div>
+                    <div className="flex w-full flex-col gap-6 rounded-2xl border border-[rgba(229,231,235,0.8)] p-8 lg:w-[520px]">
+                        <Shimmer className="h-4 w-48" rounded="rounded-md" />
+                        <Shimmer className="h-10 w-full" rounded="rounded-md" />
+                        <SkeletonField inputClassName="h-[47.6px]" />
+                        <SkeletonField inputClassName="h-[47.6px]" />
+                        <Shimmer className="h-10 w-full" rounded="rounded-lg" />
                     </div>
                 </div>
                 <div className="flex flex-1 items-end pt-10">
-                    <SkeletonLegalFooter />
+                    <Shimmer className="h-6 w-80" rounded="rounded-md" />
                 </div>
             </div>
         </div>

@@ -10,6 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-manrope: var(--font-manrope);
+  /* next/font sets --font-switzer-family; a token can't reference its own name. */
+  --font-switzer: var(--font-switzer-family);
 }
 
 /* Design tokens from the HR-Management Figma file. */
@@ -29,24 +31,14 @@
   --color-placeholder: #b6bbc1;
   --color-muted: #72767d;
   --color-subtle: #a3a8ad;
-}
 
-/*
- * Pages marked [data-figma-scale] are authored in rem against a 1440×1024
- * Figma frame (1rem = 16 design px) and fit one screen on desktop.
- * rem = the tighter of:
- *   width:  100vw / 1440 × 16  → 1.1111vw
- *   height: 100vh / 731  × 16  → 2.1888vh
- * 731 is the smallest height the login frame can take: Figma's 1024 with the
- * empty space above the form (192) and below it (189) squeezed to 48 and 40.
- * Every element keeps Figma's size relative to the others; only those gaps
- * (and the photo crop) absorb the screen height. At 1440×1024 the gaps are
- * exactly Figma's. 12px floor; the cap stops ballooning past 1920px.
- */
-@media (min-width: 64rem) {
-  html:has([data-figma-scale]) {
-    font-size: clamp(12px, min(1.1111vw, 2.1888vh), 21.3333px);
-  }
+  /* New careers-portal designs (Acsendus Company Figma file). */
+  --color-action: #0061af;
+  --color-primary-200: #afc9e6;
+  --color-border-default: #c9d0d8;
+  --color-hint: #9ca3af;
+  --color-required: #d64545;
+  --color-neutral-700: #404040;
 }
 
 /* Used by the Shimmer skeleton in components/skeletons/SkeletonPrimitives.jsx. */
