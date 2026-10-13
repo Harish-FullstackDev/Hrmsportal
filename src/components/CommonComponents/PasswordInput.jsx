@@ -20,11 +20,13 @@ export default function PasswordInput({
     return (
         <div className={`flex items-center bg-white ${focusClassName} ${fieldClassName}`}>
             <input
+                suppressHydrationWarning
                 {...inputProps}
                 type={visible ? "text" : "password"}
                 className={`h-full min-w-0 flex-1 bg-transparent outline-none ${className}`}
             />
             <button
+                suppressHydrationWarning
                 type="button"
                 onClick={() => setVisible((v) => !v)}
                 aria-label={visible ? "Hide password" : "Show password"}

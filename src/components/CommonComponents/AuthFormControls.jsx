@@ -13,6 +13,12 @@ import iconArrowRight from "@/assets/CommonComponents/icons/arrow-right-14.svg";
 // intro, button, footer), so 20 is used to keep Figma's block heights.
 export const textClass = "text-sm leading-5";
 
+// Form controls here (and in PasswordInput / VerifyYourEmail) carry
+// suppressHydrationWarning: Edge autofill and password-manager extensions
+// add `fdprocessedid` to inputs and buttons before React hydrates, which
+// otherwise logs a dev-only hydration mismatch. It only silences attribute
+// differences on that one element.
+
 // Figma's field is 46 tall: 13 from the outer edge to a 20 line (1 border +
 // 12 padding here).
 const fieldClass = "rounded-lg border bg-white p-3 transition-colors";
@@ -72,6 +78,7 @@ export function TextField({ id, label, required = false, invalid = false, classN
                 {label}
             </FieldLabel>
             <input
+                suppressHydrationWarning
                 id={id}
                 aria-invalid={invalid || undefined}
                 className={`${fieldClass} ${borderClass(invalid)} ${textClass} w-full outline-none placeholder:text-hint focus:border-action`}
@@ -111,6 +118,7 @@ export function Checkbox({ checked, onChange, boxClassName, children, ...inputPr
     return (
         <label className={`flex cursor-pointer items-center gap-2 text-neutral-700 ${textClass}`}>
             <input
+                suppressHydrationWarning
                 type="checkbox"
                 checked={checked}
                 onChange={onChange}
@@ -131,6 +139,7 @@ export function Checkbox({ checked, onChange, boxClassName, children, ...inputPr
 export function SubmitButton({ busy, children }) {
     return (
         <button
+            suppressHydrationWarning
             type="submit"
             disabled={busy}
             className={`flex w-full items-center justify-center gap-3 rounded-lg bg-action px-3 py-2.5 text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition-colors hover:bg-action/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-wait disabled:opacity-70 ${textClass}`}
@@ -141,12 +150,14 @@ export function SubmitButton({ busy, children }) {
     );
 }
 
-// Full-width outline link under the primary button (Cancel / Back).
+// Full-width outline link under the primary button (Cancel / Back). Figma
+// "Button" secondary: action-blue border, ink text, 1 border + 9 padding so
+// it is 40 tall like the primary one.
 export function SecondaryLink({ href, children }) {
     return (
         <Link
             href={href}
-            className={`flex w-full items-center justify-center rounded-lg border border-action bg-white px-3 py-2.5 text-action transition-colors hover:bg-action/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${textClass}`}
+            className={`flex w-full items-center justify-center rounded-lg border border-action bg-white px-3 py-[9px] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors hover:bg-action/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${textClass}`}
         >
             {children}
         </Link>

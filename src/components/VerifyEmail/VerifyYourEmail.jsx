@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
     AuthCard,
     FormMessage,
-    SecondaryButton,
+    SecondaryLink,
     SubmitButton,
     textClass,
 } from "@/components/CommonComponents/AuthFormControls";
@@ -120,6 +120,7 @@ export default function VerifyYourEmail() {
                         {digits.map((digit, i) => (
                             <span key={i} className="relative h-14 w-[61px] min-w-0 shrink">
                                 <input
+                                    suppressHydrationWarning
                                     ref={(el) => (inputs.current[i] = el)}
                                     type="text"
                                     inputMode="numeric"
@@ -152,13 +153,18 @@ export default function VerifyYourEmail() {
 
                 <div className="flex flex-col gap-2">
                     <SubmitButton busy={submitting}>{submitting ? "Verifying…" : "Verify OTP"}</SubmitButton>
-                    <SecondaryButton href="/">Cancel</SecondaryButton>
+                    <SecondaryLink href="/">Cancel</SecondaryLink>
                 </div>
             </form>
 
             <p className={textClass}>
                 Didn&apos;t receive the code?{" "}
-                <button type="button" onClick={handleResend} className={`cursor-pointer ${linkClass}`}>
+                <button
+                    type="button"
+                    suppressHydrationWarning
+                    onClick={handleResend}
+                    className={`cursor-pointer ${linkClass}`}
+                >
                     Resend Code
                 </button>
             </p>
