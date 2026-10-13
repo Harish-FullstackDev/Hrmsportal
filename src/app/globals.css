@@ -38,6 +38,7 @@
   --color-border-default: #c9d0d8;
   --color-hint: #9ca3af;
   --color-required: #d64545;
+  --color-muted-ink: #5c7088; /* text/muted */
   --color-neutral-300: #d4d4d4;
   --color-neutral-700: #404040;
 }

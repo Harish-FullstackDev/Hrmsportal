@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import PasswordInput from "@/components/CommonComponents/PasswordInput";
 
@@ -17,20 +18,34 @@ export const textClass = "text-sm leading-5";
 const fieldClass = "rounded-lg border bg-white p-3 transition-colors";
 const borderClass = (invalid) => (invalid ? "border-required" : "border-border-default");
 
-// The white card: eyebrow title, intro line, then the screen's form.
+// The white card surface. Screens set their own padding and gap.
+export function AuthCardShell({ className = "", ...props }) {
+    return (
+        <section
+            className={`flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[rgba(229,231,235,0.8)] bg-white shadow-[4px_4px_12px_rgba(0,0,0,0.05)] backdrop-blur-[8px] ${className}`}
+            {...props}
+        />
+    );
+}
+
+// Eyebrow title (Figma "Body_Eyebrow": 14 medium, 16 line, 5% tracking).
+export function CardTitle({ id, className = "", children }) {
+    return (
+        <h2 id={id} className={`text-sm leading-4 font-medium tracking-[0.05em] uppercase ${className}`}>
+            {children}
+        </h2>
+    );
+}
+
+// The form card: eyebrow title, intro line, then the screen's form.
 // 1 border + 32 padding = Figma's 33; 24 between every block.
 export function AuthCard({ titleId, title, description, children }) {
     return (
-        <section
-            aria-labelledby={titleId}
-            className="flex w-full min-w-0 flex-col gap-6 overflow-hidden rounded-2xl border border-[rgba(229,231,235,0.8)] bg-white p-6 shadow-[4px_4px_12px_rgba(0,0,0,0.05)] backdrop-blur-[8px] sm:p-8"
-        >
-            <h2 id={titleId} className="text-sm leading-4 font-medium tracking-[0.05em] uppercase">
-                {title}
-            </h2>
+        <AuthCardShell aria-labelledby={titleId} className="gap-6 p-6 sm:p-8">
+            <CardTitle id={titleId}>{title}</CardTitle>
             <p className={textClass}>{description}</p>
             {children}
-        </section>
+        </AuthCardShell>
     );
 }
 
@@ -124,6 +139,14 @@ export function SubmitButton({ busy, children }) {
             <Image src={iconArrowRight} alt="" className="size-[14px]" />
         </button>
     );
+}
+
+// Full-width outline button (Figma "Button", secondary). 1 border + 9
+// padding keeps it 40 tall like the primary one. Renders a link when given
+// `href`.
+export function SecondaryButton({ href, className = "", ...props }) {
+    const classes = `flex w-full items-center justify-center rounded-lg border border-action bg-white px-3 py-[9px] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors hover:bg-action/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${textClass} ${className}`;
+    return href ? <Link href={href} className={classes} {...props} /> : <button type="button" className={classes} {...props} />;
 }
 
 // Error (red) or success (green) line in the form. Not in the design.
