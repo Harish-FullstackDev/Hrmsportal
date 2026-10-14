@@ -68,6 +68,14 @@
   }
 }
 
+/* Fields that appear when the applicant's Current Status changes. */
+@keyframes apply-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 /* Stepper check mark popping in once a stage is done. */
 @keyframes apply-check-in {
   from {

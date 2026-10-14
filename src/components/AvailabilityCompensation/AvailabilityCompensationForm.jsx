@@ -1,28 +1,11 @@
 import { ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
 import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
+import { availabilityFieldsFor } from "@/components/Apply/applicantStatus";
 
 // Options for the dropdowns. The design shows none, so these are starting
-// points; salaries are annual INR bands (the role is in Kochi).
+// points.
 const noticePeriods = ["Immediate", "15 days", "30 days", "45 days", "60 days", "90 days", "More than 90 days"];
 const yesNo = ["Yes", "No", "Open to discuss"];
-const availableFrom = [
-    "Immediately",
-    "Within 2 weeks",
-    "Within 1 month",
-    "Within 2 months",
-    "Within 3 months",
-    "After 3 months",
-];
-const salaryBands = [
-    "Below ₹5 LPA",
-    "₹5–10 LPA",
-    "₹10–15 LPA",
-    "₹15–20 LPA",
-    "₹20–30 LPA",
-    "₹30–40 LPA",
-    "₹40–50 LPA",
-    "Above ₹50 LPA",
-];
 const languageOptions = ["English", "Malayalam", "Hindi", "Tamil", "Kannada", "Telugu", "Arabic", "French", "German"];
 
 export const emptyAvailabilityCompensation = {
@@ -37,35 +20,59 @@ export const emptyAvailabilityCompensation = {
     expectedSalary: "",
 };
 
+// Labels, shared with the review stage.
+export const availabilityLabels = {
+    noticePeriod: "Notice period",
+    canShorten: "Can your notice period be shortened?",
+    earliestStart: "Earliest start date",
+    lastWorkingDay: "Last working day",
+    availableFrom: "Available from",
+    relocate: "Willing to relocate to the job location",
+    languages: "Languages",
+    currentSalary: "Current annual salary",
+    expectedSalary: "Expected annual salary",
+};
+
+// Optional fields; every other shown field is required.
+const OPTIONAL = new Set(["earliestStart", "languages"]);
+
 const REQUIRED = {
     noticePeriod: "Select your notice period.",
     canShorten: "Select an option.",
     lastWorkingDay: "Enter your last working day.",
-    availableFrom: "Select when you are available.",
+    availableFrom: "Enter the date you are available from.",
     relocate: "Select an option.",
-    currentSalary: "Select your current or last salary.",
-    expectedSalary: "Select your expected salary.",
+    currentSalary: "Enter your current annual salary.",
+    expectedSalary: "Enter your expected annual salary.",
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-// Returns { field: message } for every invalid field; empty when valid.
-export function validateAvailabilityCompensation(values) {
+// Salaries are stored as digits and shown with Indian digit grouping.
+export const formatSalary = (digits) => (digits ? `₹${Number(digits).toLocaleString("en-IN")}` : "");
+
+// Returns { field: message } for every invalid field the status shows.
+export function validateAvailabilityCompensation(values, status) {
     const errors = {};
-    for (const [field, message] of Object.entries(REQUIRED)) {
-        if (!values[field]) errors[field] = message;
+    const fields = availabilityFieldsFor(status);
+    for (const field of fields) {
+        if (!OPTIONAL.has(field) && !values[field]) errors[field] = REQUIRED[field];
     }
-    if (values.earliestStart && values.earliestStart < today()) {
-        errors.earliestStart = "Choose today or a later date.";
+    for (const field of ["earliestStart", "availableFrom"]) {
+        if (fields.includes(field) && !errors[field] && values[field] && values[field] < today()) {
+            errors[field] = "Choose today or a later date.";
+        }
     }
     return errors;
 }
 
-// Figma 1380:3781: stage 5 of the application. Same 3-column grid as the
-// other stages (20 apart, rows 16 apart); two columns on tablets, one on
-// phones. Dates use the browser's date picker.
-export default function AvailabilityCompensationForm({ values, errors, onChange }) {
+// Figma 1380:3781 + the status variants (see applicantStatus.js): stage 5 of
+// the application. The fields depend on the status chosen in stage 3. Same
+// 3-column grid as the other stages; dates use the browser's date picker and
+// salaries are typed amounts.
+export default function AvailabilityCompensationForm({ values, errors, onChange, status }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
+    const fields = availabilityFieldsFor(status);
 
     const control = (field) => ({
         id: field,
@@ -74,17 +81,49 @@ export default function AvailabilityCompensationForm({ values, errors, onChange 
         invalid: Boolean(errors[field]),
         describedBy: messageIdFor(field, { error: errors[field] }),
     });
-    const select = (field, options, placeholder = "Select one Option") => (
+    const select = (field, options) => (
         <ApplySelect
             {...control(field)}
             onChange={(event) => setValue(field, event.target.value)}
             options={options}
-            placeholder={placeholder}
+            placeholder="Select one Option"
         />
     );
     const date = (field, props) => (
         <ApplyTextInput {...control(field)} type="date" onChange={(event) => setValue(field, event.target.value)} {...props} />
     );
+    const salary = (field, placeholder) => (
+        <ApplyTextInput
+            {...control(field)}
+            value={values[field] ? Number(values[field]).toLocaleString("en-IN") : ""}
+            inputMode="numeric"
+            placeholder={placeholder}
+            onChange={(event) => setValue(field, event.target.value.replace(/\D/g, "").slice(0, 12))}
+        />
+    );
+
+    const controls = {
+        noticePeriod: () => select("noticePeriod", noticePeriods),
+        canShorten: () => select("canShorten", yesNo),
+        earliestStart: () => date("earliestStart", { min: today() }),
+        lastWorkingDay: () => date("lastWorkingDay"),
+        availableFrom: () => date("availableFrom", { min: today() }),
+        relocate: () => select("relocate", yesNo),
+        languages: () => (
+            <ApplyTagPicker
+                id="languages"
+                value={values.languages}
+                onChange={(next) => setValue("languages", next)}
+                options={languageOptions}
+                placeholder="Enter the languages you know"
+                listLabel="Languages"
+                chevron={false}
+                widthClassName=""
+            />
+        ),
+        currentSalary: () => salary("currentSalary", "Enter your annual fixed salary"),
+        expectedSalary: () => salary("expectedSalary", "Enter your expected annual salary"),
+    };
 
     return (
         <section aria-labelledby="availability-title" className="w-full">
@@ -92,49 +131,17 @@ export default function AvailabilityCompensationForm({ values, errors, onChange 
                 Availability and Compensation
             </h2>
             <div className="grid w-full gap-x-5 gap-y-4 md:grid-cols-2 lg:grid-cols-3">
-                <ApplyField id="noticePeriod" label="Notice period" required error={errors.noticePeriod}>
-                    {select("noticePeriod", noticePeriods)}
-                </ApplyField>
-                <ApplyField id="canShorten" label="Can your notice period be shortened?" required error={errors.canShorten}>
-                    {select("canShorten", yesNo)}
-                </ApplyField>
-                <ApplyField id="earliestStart" label="Earliest start date" error={errors.earliestStart}>
-                    {date("earliestStart", { min: today() })}
-                </ApplyField>
-
-                <ApplyField id="lastWorkingDay" label="Last working day" required error={errors.lastWorkingDay}>
-                    {date("lastWorkingDay")}
-                </ApplyField>
-                <ApplyField id="availableFrom" label="Available from" required error={errors.availableFrom}>
-                    {select("availableFrom", availableFrom)}
-                </ApplyField>
-                <ApplyField id="relocate" label="Willing to relocate to the job location" required error={errors.relocate}>
-                    {select("relocate", yesNo)}
-                </ApplyField>
-
-                <ApplyField id="languages" label="Languages" error={errors.languages}>
-                    <ApplyTagPicker
-                        id="languages"
-                        value={values.languages}
-                        onChange={(next) => setValue("languages", next)}
-                        options={languageOptions}
-                        placeholder="Add the languages you speak"
-                        listLabel="Languages"
-                        chevron={false}
-                        widthClassName=""
-                    />
-                </ApplyField>
-                <ApplyField
-                    id="currentSalary"
-                    label="Current or last drawn annual fixed salary"
-                    required
-                    error={errors.currentSalary}
-                >
-                    {select("currentSalary", salaryBands, "Select your salary")}
-                </ApplyField>
-                <ApplyField id="expectedSalary" label="Expected annual salary" required error={errors.expectedSalary}>
-                    {select("expectedSalary", salaryBands, "Expected Annual Salary")}
-                </ApplyField>
+                {fields.map((field) => (
+                    <ApplyField
+                        key={field}
+                        id={field}
+                        label={availabilityLabels[field]}
+                        required={!OPTIONAL.has(field)}
+                        error={errors[field]}
+                    >
+                        {controls[field]()}
+                    </ApplyField>
+                ))}
             </div>
         </section>
     );

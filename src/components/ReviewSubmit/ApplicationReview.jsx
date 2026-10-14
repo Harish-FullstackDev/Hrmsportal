@@ -1,12 +1,34 @@
+import { availabilityFieldsFor, experienceFieldsFor } from "@/components/Apply/applicantStatus";
 import { applyStepHref } from "@/components/Apply/applySteps";
+import { availabilityLabels, formatSalary } from "@/components/AvailabilityCompensation/AvailabilityCompensationForm";
+import { experienceLabels } from "@/components/ExperienceEducation/ExperienceEducationForm";
 import { ReviewField, ReviewGrid, ReviewSection, ReviewSkillLevels } from "@/components/ReviewSubmit/ReviewParts";
 
 // Native date inputs store yyyy-mm-dd; the review shows dd/mm/yyyy.
 const formatDate = (value) => (value ? value.split("-").reverse().join("/") : "");
 
+// Experience answers drawn with a dropdown arrow (they were picked from lists).
+const EXPERIENCE_SELECTS = new Set([
+    "employmentStatus",
+    "totalExperience",
+    "relevantExperience",
+    "qualification",
+    "university",
+    "graduationYear",
+]);
+
+const DATE_FIELDS = new Set(["earliestStart", "lastWorkingDay", "availableFrom"]);
+
+const availabilityValue = (field, value) => {
+    if (DATE_FIELDS.has(field)) return formatDate(value);
+    if (field.endsWith("Salary")) return formatSalary(value);
+    return value;
+};
+
 // Figma 1403:11918: stage 6 of the application. One card per earlier stage,
-// 32 apart, each echoing that stage's answers read-only. `data` is the apply
-// context's stepData; missing stages show "Not provided".
+// 32 apart, each echoing that stage's answers read-only. The experience and
+// availability cards show only the fields the Current Status asks for.
+// `data` is the apply context's stepData; missing answers show "Not provided".
 export default function ApplicationReview({ resume, resumeUrl, role, data }) {
     const personal = data["personal-details"] ?? {};
     const experience = data["experience-and-education"] ?? {};
@@ -53,21 +75,16 @@ export default function ApplicationReview({ resume, resumeUrl, role, data }) {
 
             <ReviewSection title="Experience and Education" editHref={applyStepHref(2)} className="pt-[38px] pb-[34px]">
                 <ReviewGrid>
-                    <ReviewField label="Current employment status" required value={experience.employmentStatus} kind="select" />
-                    <ReviewField label="Total years of experience" required value={experience.totalExperience} kind="select" />
-                    <ReviewField label="Relevant experience for this role" required value={experience.relevantExperience} kind="select" />
-                    <ReviewField label="Current or most recent employer" required value={experience.employer} />
-                    <ReviewField label="Current or most recent job title" required value={experience.jobTitle} />
-                    <ReviewField label="Highest qualification" required value={experience.qualification} kind="select" />
-                    <ReviewField label="Field of study" required value={experience.fieldOfStudy} />
-                    <ReviewField label="University or college" required value={experience.university} kind="select" />
-                    <ReviewField label="Year of graduation" required value={experience.graduationYear} kind="select" />
-                    <ReviewField
-                        label="What kind of work have you done most?"
-                        required
-                        value={experience.skills}
-                        className="md:col-span-2 lg:col-span-3 lg:max-w-[417px]"
-                    />
+                    {experienceFieldsFor(experience.employmentStatus).map((field) => (
+                        <ReviewField
+                            key={field}
+                            label={experienceLabels[field]}
+                            required
+                            value={experience[field]}
+                            kind={EXPERIENCE_SELECTS.has(field) ? "select" : undefined}
+                            className={field === "skills" ? "md:col-span-2 lg:col-span-3 lg:max-w-[417px]" : ""}
+                        />
+                    ))}
                 </ReviewGrid>
             </ReviewSection>
 
@@ -97,15 +114,15 @@ export default function ApplicationReview({ resume, resumeUrl, role, data }) {
 
             <ReviewSection title="Availability and Compensation" editHref={applyStepHref(4)} className="pt-[38px] pb-[34px]">
                 <ReviewGrid>
-                    <ReviewField label="Notice period" required value={availability.noticePeriod} kind="select" />
-                    <ReviewField label="Can your notice period be shortened?" required value={availability.canShorten} kind="select" />
-                    <ReviewField label="Earliest start date" value={formatDate(availability.earliestStart)} kind="select" />
-                    <ReviewField label="Last working day" required value={formatDate(availability.lastWorkingDay)} kind="select" />
-                    <ReviewField label="Available from" required value={availability.availableFrom} kind="select" />
-                    <ReviewField label="Willing to relocate to the job location" required value={availability.relocate} kind="select" />
-                    <ReviewField label="Languages" value={availability.languages} />
-                    <ReviewField label="Current or last drawn annual fixed salary" required value={availability.currentSalary} kind="select" />
-                    <ReviewField label="Expected annual salary" required value={availability.expectedSalary} kind="select" />
+                    {availabilityFieldsFor(experience.employmentStatus).map((field) => (
+                        <ReviewField
+                            key={field}
+                            label={availabilityLabels[field]}
+                            required={!["earliestStart", "languages"].includes(field)}
+                            value={availabilityValue(field, availability[field])}
+                            kind={field === "languages" || field.endsWith("Salary") ? undefined : "select"}
+                        />
+                    ))}
                 </ReviewGrid>
             </ReviewSection>
         </div>

@@ -14,8 +14,8 @@ import { validatePersonalDetails } from "@/components/PersonalDetails/PersonalDe
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
 import { validateSkillsCertifications } from "@/components/SkillsCertifications/SkillsCertificationsForm";
 
-// Each form stage's validator, by slug. A stage with no saved data counts as
-// incomplete.
+// Each form stage's validator, by slug (called with the stage values and the
+// Current Status). A stage with no saved data counts as incomplete.
 const validators = {
     "personal-details": validatePersonalDetails,
     "experience-and-education": validateExperienceEducation,
@@ -36,7 +36,8 @@ const ReviewSubmitPage = () => {
         const missing = applySteps.slice(0, 5).filter(({ slug }, index) => {
             if (index === 0) return !resume;
             const saved = stepData[slug];
-            return !saved || Object.keys(validators[slug](saved)).length > 0;
+            const applicantStatus = stepData["experience-and-education"]?.employmentStatus;
+            return !saved || Object.keys(validators[slug](saved, applicantStatus)).length > 0;
         });
         setIncomplete(missing);
         if (missing.length > 0) return;

@@ -10,8 +10,6 @@ export const experienceRanges = [
     "12+ years",
 ];
 
-export const employmentStatuses = ["Employed", "Between jobs", "Freelancing", "Student", "Other"];
-
 export const qualifications = [
     "High school",
     "Diploma",
