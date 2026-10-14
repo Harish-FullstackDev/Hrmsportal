@@ -11,7 +11,6 @@ export const emptyPersonalDetails = {
     firstName: "",
     lastName: "",
     email: "",
-    role: "",
     phone: "",
     linkedIn: "",
     nationality: "",
@@ -36,7 +35,6 @@ export function validatePersonalDetails(values) {
     requireValue("firstName", "Enter your first name.");
     requireValue("lastName", "Enter your last name.");
     requireValue("email", "Enter your email address.");
-    requireValue("role", "Enter the role you are applying for.");
     requireValue("linkedIn", "Enter your LinkedIn profile URL.");
     requireValue("nationality", "Enter your nationality.");
     requireValue("country", "Select your country.");
@@ -61,8 +59,9 @@ export function validatePersonalDetails(values) {
 
 // Figma 1380:3211: stage 2 of the application. Three equal columns, 20
 // apart, rows 16 apart (every field reserves its hint line, so rows are 97
-// tall). Two columns on tablets, one on phones.
-export default function PersonalDetailsForm({ values, errors, onChange }) {
+// tall). Two columns on tablets, one on phones. Role is the job being applied
+// for, so it is shown read-only and isn't part of the form values.
+export default function PersonalDetailsForm({ values, errors, onChange, role }) {
     const set = (field) => (event) => {
         const next = { ...values, [field]: event.target.value };
         // A new country invalidates the chosen state.
@@ -108,8 +107,18 @@ export default function PersonalDetailsForm({ values, errors, onChange }) {
                     {text("email", { type: "email", autoComplete: "email", placeholder: "Enter your email address" })}
                 </ApplyField>
 
-                <ApplyField id="role" label="Role" required error={errors.role}>
-                    {text("role", { autoComplete: "organization-title", placeholder: "Enter the role" })}
+                <ApplyField id="role" label="Role" required hint="Set by the job you are applying for">
+                    {/* Read-only, drawn in Figma's grey field colour. */}
+                    <div className="[&_input]:cursor-default [&_input]:bg-[#f9fafb] [&_input]:focus:border-border-default">
+                        <ApplyTextInput
+                            id="role"
+                            name="role"
+                            value={role}
+                            readOnly
+                            aria-readonly="true"
+                            describedBy="role-message"
+                        />
+                    </div>
                 </ApplyField>
                 <ApplyField id="phone" label="Phone Number" error={errors.phone}>
                     <ApplyPhoneInput {...control("phone")} autoComplete="tel-national" placeholder="9876543210" />

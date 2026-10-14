@@ -1,13 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import arrowRightAction from "@/assets/Apply/icons/arrow-right-action-14.svg";
 import arrowRight from "@/assets/Apply/icons/arrow-right-muted-14.svg";
 import infoIcon from "@/assets/Apply/icons/info-12.svg";
+import arrowRightWhite from "@/assets/CommonComponents/icons/arrow-right-14.svg";
 
 // Figma 1380:3135: required-fields notes on the left, Back / Next on the
 // right (two 69-wide groups spread over 165). Back is Figma's arrow flipped.
 // `onBack` runs before Back navigates (e.g. to keep the stage's entries).
-export default function ApplyStepFooter({ backHref, onBack, onNext, nextLabel = "Next" }) {
+//
+// The review stage (Figma 1403:12230) uses `buttons`: an outlined Back and a
+// filled primary action (Submit), 7 radius, 12/8 padding, spread over 210.
+export default function ApplyStepFooter({ backHref, onBack, onNext, nextLabel = "Next", buttons = false, busy = false }) {
     return (
         <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1 text-sm leading-5">
@@ -20,20 +25,46 @@ export default function ApplyStepFooter({ backHref, onBack, onNext, nextLabel = 
                 </p>
             </div>
 
-            <div className="flex w-[165px] shrink-0 items-center justify-between text-base leading-[1.5]">
-                <Link href={backHref} onClick={onBack} className="flex w-[69px] items-center gap-2 text-muted-ink hover:text-ink">
-                    <Image src={arrowRight} alt="" width={14} height={14} className="rotate-180" />
-                    Back
-                </Link>
-                <button
-                    type="button"
-                    onClick={onNext}
-                    className="flex w-[69px] cursor-pointer items-center gap-2 text-action hover:underline"
-                >
-                    {nextLabel}
-                    <Image src={arrowRight} alt="" width={14} height={14} />
-                </button>
-            </div>
+            {buttons ? (
+                <div className="flex w-[210px] shrink-0 items-center justify-between text-base leading-[1.5]">
+                    <Link
+                        href={backHref}
+                        onClick={onBack}
+                        className="flex items-center gap-2 rounded-[7px] border border-action px-3 py-2 text-ink-secondary transition-colors hover:bg-surface-brand-subtle"
+                    >
+                        <Image src={arrowRightAction} alt="" width={14} height={14} className="rotate-180" />
+                        Back
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={onNext}
+                        disabled={busy}
+                        className="flex cursor-pointer items-center gap-2 rounded-[7px] border border-action bg-action px-3 py-2 text-white transition-colors hover:bg-action/90 disabled:cursor-wait disabled:opacity-70"
+                    >
+                        {nextLabel}
+                        <Image src={arrowRightWhite} alt="" width={14} height={14} />
+                    </button>
+                </div>
+            ) : (
+                <div className="flex w-[165px] shrink-0 items-center justify-between text-base leading-[1.5]">
+                    <Link
+                        href={backHref}
+                        onClick={onBack}
+                        className="flex w-[69px] items-center gap-2 text-muted-ink hover:text-ink"
+                    >
+                        <Image src={arrowRight} alt="" width={14} height={14} className="rotate-180" />
+                        Back
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={onNext}
+                        className="flex w-[69px] cursor-pointer items-center gap-2 text-action hover:underline"
+                    >
+                        {nextLabel}
+                        <Image src={arrowRight} alt="" width={14} height={14} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

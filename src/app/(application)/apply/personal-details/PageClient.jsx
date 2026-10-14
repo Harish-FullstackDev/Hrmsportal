@@ -14,12 +14,12 @@ import PersonalDetailsForm, {
 import { createClient } from "@/lib/supabase/client";
 
 // Figma frame 1380:3154: stage 2 of 6. Starts from what the candidate already
-// entered, otherwise from the job title and the signed-in account's name and
-// email. Next validates and moves to stage 3; Back returns to stage 1.
+// entered, otherwise from the signed-in account's name and email. Role is
+// fixed to the job's title. Next validates and moves to stage 3; Back returns to stage 1.
 const PersonalDetailsPage = () => {
     const { values, setValues, errors, handleChange, handleBack, handleNext, hadSavedValues } = useStageForm({
         slug: "personal-details",
-        initial: { ...emptyPersonalDetails, role: jobDetails.title },
+        initial: emptyPersonalDetails,
         validate: validatePersonalDetails,
         nextIndex: 2,
     });
@@ -50,7 +50,7 @@ const PersonalDetailsPage = () => {
 
     return (
         <ApplyStage className="flex flex-col gap-12">
-            <PersonalDetailsForm values={values} errors={errors} onChange={handleChange} />
+            <PersonalDetailsForm values={values} errors={errors} onChange={handleChange} role={jobDetails.title} />
             <ApplyStepFooter backHref={applyStepHref(0)} onBack={handleBack} onNext={handleNext} />
         </ApplyStage>
     );
