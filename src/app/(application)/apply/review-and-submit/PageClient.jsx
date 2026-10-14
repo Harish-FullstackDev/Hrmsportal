@@ -7,21 +7,9 @@ import { useApplication } from "@/components/Apply/ApplicationContext";
 import ApplyStage from "@/components/Apply/ApplyStage";
 import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
-import { validateAvailabilityCompensation } from "@/components/AvailabilityCompensation/AvailabilityCompensationForm";
-import { validateExperienceEducation } from "@/components/ExperienceEducation/ExperienceEducationForm";
+import { isStageComplete } from "@/components/Apply/stageCompletion";
 import { jobDetails } from "@/components/JobDetails/jobDetailsData";
-import { validatePersonalDetails } from "@/components/PersonalDetails/PersonalDetailsForm";
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
-import { validateSkillsCertifications } from "@/components/SkillsCertifications/SkillsCertificationsForm";
-
-// Each form stage's validator, by slug (called with the stage values and the
-// Current Status). A stage with no saved data counts as incomplete.
-const validators = {
-    "personal-details": validatePersonalDetails,
-    "experience-and-education": validateExperienceEducation,
-    "skills-and-certifications": validateSkillsCertifications,
-    "availability-and-compensation": validateAvailabilityCompensation,
-};
 
 // Figma frame 1403:11863: stage 6 of 6. Shows every answer for a last check.
 // Submit re-checks all stages and lists any that are incomplete (e.g. after a
@@ -33,12 +21,7 @@ const ReviewSubmitPage = () => {
     const [status, setStatus] = useState("idle"); // idle | submitting | submitted
 
     const handleSubmit = () => {
-        const missing = applySteps.slice(0, 5).filter(({ slug }, index) => {
-            if (index === 0) return !resume;
-            const saved = stepData[slug];
-            const applicantStatus = stepData["experience-and-education"]?.employmentStatus;
-            return !saved || Object.keys(validators[slug](saved, applicantStatus)).length > 0;
-        });
+        const missing = applySteps.slice(0, 5).filter((_, index) => !isStageComplete(index, { resume, stepData }));
         setIncomplete(missing);
         if (missing.length > 0) return;
 

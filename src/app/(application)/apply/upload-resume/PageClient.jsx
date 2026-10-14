@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { useApplication } from "@/components/Apply/ApplicationContext";
+import { useApplication, useStageControl } from "@/components/Apply/ApplicationContext";
 import ApplyStage from "@/components/Apply/ApplyStage";
 import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref } from "@/components/Apply/applySteps";
@@ -16,12 +16,17 @@ const UploadResumePage = () => {
     const { resume } = useApplication();
     const [error, setError] = useState(null);
 
+    // The resume is kept in the context as soon as it is picked, so there is
+    // nothing extra to save; going forward needs one.
+    const validateNow = () => {
+        if (resume) return true;
+        setError("Upload your resume to continue.");
+        return false;
+    };
+    useStageControl({ save: () => {}, validateNow });
+
     const handleNext = () => {
-        if (!resume) {
-            setError("Upload your resume to continue.");
-            return;
-        }
-        router.push(applyStepHref(1));
+        if (validateNow()) router.push(applyStepHref(1));
     };
 
     return (
