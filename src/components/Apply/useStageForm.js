@@ -44,5 +44,14 @@ export default function useStageForm({ slug, initial, validate, nextIndex, field
     // Lets the stepper keep (going back) or check (going forward) this stage.
     useStageControl({ save: handleBack, validateNow });
 
-    return { values, setValues, errors, handleChange, handleBack, handleNext, hadSavedValues: Boolean(stepData[slug]) };
+    return {
+        values,
+        setValues,
+        errors,
+        handleChange,
+        handleBack,
+        handleNext,
+        validateNow,
+        hadSavedValues: Boolean(stepData[slug]),
+    };
 }
