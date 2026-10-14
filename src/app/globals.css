@@ -41,6 +41,39 @@
   --color-muted-ink: #5c7088; /* text/muted */
   --color-neutral-300: #d4d4d4;
   --color-neutral-700: #404040;
+
+  /* Signed-in application pages (job details, Figma 1380:2917). */
+  --color-ink-secondary: #415773; /* text/secondary */
+  --color-ink-disabled: #c9d0d8; /* text/disabled */
+  --color-info-100: #ddf1fd;
+  --color-info-500: #00acec;
+  --color-surface-brand-subtle: #ecf2f9;
+  --color-neutral-100: #f1f3f5;
+  --color-border-strong: #8695a7;
+  --color-rail: #e5eeff; /* apply stepper background rail */
+}
+
+/* Apply stages slide in from the side they come from (components/Apply/ApplyStage.jsx). */
+@keyframes apply-step-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@keyframes apply-step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+}
+
+/* Stepper check mark popping in once a stage is done. */
+@keyframes apply-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
 }
 
 /* Used by the Shimmer skeleton in components/skeletons/SkeletonPrimitives.jsx. */

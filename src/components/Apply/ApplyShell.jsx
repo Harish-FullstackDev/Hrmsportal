@@ -1,0 +1,50 @@
+"use client";
+
+import { createContext, useContext, useState } from "react";
+import { usePathname } from "next/navigation";
+
+import PortalHeader from "@/components/CommonComponents/PortalHeader";
+import { ApplicationProvider } from "@/components/Apply/ApplicationContext";
+import ApplicationStepper from "@/components/Apply/ApplicationStepper";
+import { applySteps } from "@/components/Apply/applySteps";
+import JobHero from "@/components/JobDetails/JobHero";
+import { jobDetails } from "@/components/JobDetails/jobDetailsData";
+
+// Direction of the last stage change ("next" or "back"), read by ApplyStage.
+const DirectionContext = createContext("next");
+export const useApplyDirection = () => useContext(DirectionContext);
+
+// Shared frame of the apply stages (Figma 1380:3059 onwards, 1440 wide):
+// header, the job banner, then the stepper 32 under it and the stage content
+// 32 under the stepper (stages add their own extra space), all 64 from the
+// screen edges. The current stage comes from the URL. The stepper animates
+// its own rail and circles; each stage wraps its content in ApplyStage.
+export default function ApplyShell({ children }) {
+    const pathname = usePathname();
+    const currentIndex = Math.max(
+        0,
+        applySteps.findIndex(({ slug }) => pathname.endsWith(`/${slug}`)),
+    );
+    const { title, reference, status, tags } = jobDetails;
+
+    // Derived when the index changes (state-from-props pattern).
+    const [track, setTrack] = useState({ index: currentIndex, direction: "next" });
+    if (track.index !== currentIndex) {
+        setTrack({ index: currentIndex, direction: currentIndex > track.index ? "next" : "back" });
+    }
+
+    return (
+        <ApplicationProvider>
+            <DirectionContext.Provider value={track.direction}>
+                <div className="flex min-h-dvh w-full flex-1 flex-col bg-white font-switzer text-ink">
+                    <PortalHeader showProfileLink />
+                    <JobHero title={title} reference={reference} status={status} tags={tags} />
+                    <main className="flex w-full flex-1 flex-col gap-8 overflow-x-clip px-4 pt-8 pb-16 sm:px-16">
+                        <ApplicationStepper currentIndex={currentIndex} />
+                        {children}
+                    </main>
+                </div>
+            </DirectionContext.Provider>
+        </ApplicationProvider>
+    );
+}
