@@ -29,15 +29,17 @@ const benefits = [
     },
     {
         icon: <Image src={balanceIcon} alt="" width={48} height={48} />,
-        title: "Work-life balance",
+        // Figma breaks this one by hand too.
+        title: "Work-life\nbalance",
         body: "We promote a flexible work environment that includes remote work options, generous paid time off, and family leave to help you maintain a healthy balance.",
     },
 ];
 
 // Figma 1380:3025: neutral band, heading block then four 262×353 white
 // cards spread edge to edge (space-between) inside the 64 gutters. Each card
-// spaces icon, title and body apart over its fixed height. Two columns
-// below xl, one on phones.
+// keeps the icon at the top and pins the title + body group (16 apart, Figma
+// 1447:15853) to the bottom of its fixed height. Two columns below xl, one
+// on phones.
 export default function BenefitsSection() {
     return (
         <section className="w-full bg-neutral-100">
@@ -59,10 +61,12 @@ export default function BenefitsSection() {
                             className="flex flex-col justify-between gap-6 bg-white px-6 py-8 xl:h-[353px] xl:gap-0"
                         >
                             {icon}
-                            <h3 className="text-2xl leading-[1.2] font-medium whitespace-pre-line text-ink capitalize">
-                                {title}
-                            </h3>
-                            <p className="text-sm leading-5 text-ink-secondary">{body}</p>
+                            <div className="flex flex-col gap-4">
+                                <h3 className="text-2xl leading-[1.2] font-medium whitespace-pre-line text-ink capitalize">
+                                    {title}
+                                </h3>
+                                <p className="text-sm leading-5 text-ink-secondary">{body}</p>
+                            </div>
                         </li>
                     ))}
                 </ul>

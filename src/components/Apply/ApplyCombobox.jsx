@@ -6,10 +6,10 @@ import Image from "next/image";
 import chevronDown from "@/assets/Apply/icons/chevron-down-16.svg";
 import tagRemove from "@/assets/Apply/icons/tag-remove-13.svg";
 
-// Searchable dropdowns of the apply stages (Figma 1380:3435 university,
-// 1380:3452 skills). Both are a text input drawn like the other fields with
-// Figma's chevron; typing filters a suggestion list under the field. Free
-// text is allowed, since no list can cover every university or skill.
+// Searchable tag picker of the apply stages (Figma 1380:3452 skills). A text
+// input drawn like the other fields with Figma's chevron; typing filters a
+// suggestion list under the field. Free text is allowed, since no list can
+// cover every skill.
 
 const MAX_SUGGESTIONS = 8;
 
@@ -109,43 +109,6 @@ function Chevron({ onClick, disabled }) {
         >
             <Image src={chevronDown} alt="" width={16} height={16} />
         </button>
-    );
-}
-
-// Single value with suggestions (e.g. university). The typed text is the value.
-export function ApplyCombobox({ id, name, value, onChange, options, placeholder, invalid, describedBy }) {
-    const inputRef = useRef(null);
-    const suggestions = filterOptions(options, value).filter((option) => option !== value);
-    const { inputProps, list, setOpen } = useSuggestions({
-        suggestions,
-        onPick: (option) => {
-            onChange(option);
-            setOpen(false);
-        },
-    });
-
-    return (
-        <div className="relative">
-            <input
-                suppressHydrationWarning
-                ref={inputRef}
-                id={id}
-                name={name}
-                value={value}
-                autoComplete="off"
-                placeholder={placeholder}
-                aria-invalid={invalid || undefined}
-                aria-describedby={describedBy}
-                onChange={(event) => {
-                    onChange(event.target.value);
-                    setOpen(true);
-                }}
-                className={`${boxClass} ${borderClass(invalid)} bg-white text-ink placeholder:text-muted-ink`}
-                {...inputProps}
-            />
-            <Chevron onClick={() => inputRef.current?.focus()} />
-            {list}
-        </div>
     );
 }
 

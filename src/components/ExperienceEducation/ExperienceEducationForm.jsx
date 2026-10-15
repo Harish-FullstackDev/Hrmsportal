@@ -1,4 +1,4 @@
-import { ApplyCombobox, ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
+import { ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
 import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
 import { experienceFieldsFor, statusOptions } from "@/components/Apply/applicantStatus";
 import {
@@ -11,6 +11,12 @@ import {
 
 export const MAX_SKILLS = 6;
 
+export const OTHER_UNIVERSITY = "Other";
+
+// What the review shows: the typed name when University is "Other".
+export const universityName = (values) =>
+    values.university === OTHER_UNIVERSITY ? values.universityOther ?? "" : values.university;
+
 export const emptyExperienceEducation = {
     employmentStatus: "",
     totalExperience: "",
@@ -20,6 +26,8 @@ export const emptyExperienceEducation = {
     qualification: "",
     fieldOfStudy: "",
     university: "",
+    // The name typed in when University is "Other".
+    universityOther: "",
     graduationYear: "",
     internships: "",
     skills: [],
@@ -35,6 +43,7 @@ const REQUIRED = {
     qualification: "Select your highest qualification.",
     fieldOfStudy: "Enter your field of study.",
     university: "Enter your university or college.",
+    universityOther: "Enter your university or college name.",
     graduationYear: "Select your year of graduation.",
     internships: "Enter your internships or academic projects.",
     skills: "Add at least one skill.",
@@ -50,6 +59,7 @@ export const experienceLabels = {
     qualification: "Highest qualification",
     fieldOfStudy: "Field of study",
     university: "University or college",
+    universityOther: "University or college name",
     graduationYear: "Year of graduation",
     internships: "Internships or academic projects",
     skills: "What kind of work have you done most?",
@@ -63,6 +73,13 @@ export function validateExperienceEducation(values) {
         const value = values[field];
         const empty = Array.isArray(value) ? value.length === 0 : !String(value ?? "").trim();
         if (empty) errors[field] = REQUIRED[field];
+        // University must come from the list (answers saved when it was a
+        // free-text field may not); "Other" needs its name field.
+        else if (field === "university" && value === OTHER_UNIVERSITY) {
+            if (!values.universityOther?.trim()) errors.universityOther = REQUIRED.universityOther;
+        } else if (field === "university" && !universities.includes(value)) {
+            errors.university = 'Pick a university from the list, or choose "Other".';
+        }
     }
     return errors;
 }
@@ -78,7 +95,13 @@ const FADE_IN = "motion-safe:animate-[apply-fade-in_300ms_ease-out_both]";
 export default function ExperienceEducationForm({ values, errors, onChange }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
     const fields = experienceFieldsFor(values.employmentStatus);
-    const gridFields = fields.filter((field) => field !== "skills");
+    // "Other" opens a name field right after University.
+    const gridFields = fields
+        .filter((field) => field !== "skills")
+        .flatMap((field) =>
+            field === "university" && values.university === OTHER_UNIVERSITY ? [field, "universityOther"] : [field],
+        );
+
 
     const control = (field) => ({
         id: field,
@@ -111,14 +134,10 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
         jobTitle: () => text("jobTitle", "Enter your job title"),
         qualification: () => select("qualification", qualifications),
         fieldOfStudy: () => text("fieldOfStudy", "Enter Field of study"),
-        university: () => (
-            <ApplyCombobox
-                {...control("university")}
-                onChange={(value) => setValue("university", value)}
-                options={universities}
-                placeholder="Enter Your University Name"
-            />
-        ),
+        // A pick-only list; "Other" (last) opens the name field.
+        university: () =>
+            select("university", [...universities, OTHER_UNIVERSITY], "Select your university or college"),
+        universityOther: () => text("universityOther", "Enter your university or college name"),
         graduationYear: () => select("graduationYear", graduationYears, "Select year"),
         internships: () => text("internships", "Enter your internships or projects"),
     };

@@ -39,9 +39,9 @@ const boxClass = "flex h-[42px] w-full min-w-0 items-center rounded-lg border bo
 
 // One answer: label, 12 gap, value box, and the hint line under it when given
 // (the review keeps the stage's hint, e.g. the Aadhaar/UAN note).
-// `kind`: "select" adds the chevron, "phone" the +91 cell; `tone` "muted" is
+// `kind`: "select" adds the chevron, "phone" the country-code cell (`phoneCode`); `tone` "muted" is
 // Figma's grey box (#f9fafb) and `valueClassName` recolours the value.
-export function ReviewField({ label, required, value, hint, kind, tone, valueClassName = "text-muted-ink", className = "" }) {
+export function ReviewField({ label, required, value, hint, kind, phoneCode, tone, valueClassName = "text-muted-ink", className = "" }) {
     const empty = value == null || value === "" || (Array.isArray(value) && value.length === 0);
     const text = empty ? "Not provided" : Array.isArray(value) ? value.join(", ") : value;
     const bg = tone === "muted" ? "bg-[#f9fafb]" : "bg-white";
@@ -55,8 +55,8 @@ export function ReviewField({ label, required, value, hint, kind, tone, valueCla
             <dd className="mt-3">
                 {kind === "phone" ? (
                     <div className={`${boxClass} ${bg} gap-3 pr-[13px] pl-[5px]`}>
-                        <span className="flex h-full w-[38px] shrink-0 items-center justify-center border-r-[0.5px] border-border-strong text-muted-ink">
-                            +91
+                        <span className="flex h-full min-w-[38px] shrink-0 items-center justify-center border-r-[0.5px] pr-1 border-border-strong text-muted-ink">
+                            {phoneCode}
                         </span>
                         <span className={`truncate ${empty ? "text-hint" : valueClassName}`}>{text}</span>
                     </div>

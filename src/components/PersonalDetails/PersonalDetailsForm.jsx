@@ -5,12 +5,19 @@ import {
     ApplyTextInput,
     messageIdFor,
 } from "@/components/Apply/ApplyFormControls";
-import { countries, countryStates, genders } from "@/components/PersonalDetails/personalDetailsOptions";
+import {
+    DEFAULT_PHONE_CODE,
+    countries,
+    countryStates,
+    genders,
+    phoneCodes,
+} from "@/components/PersonalDetails/personalDetailsOptions";
 
 export const emptyPersonalDetails = {
     firstName: "",
     lastName: "",
     email: "",
+    phoneCode: DEFAULT_PHONE_CODE,
     phone: "",
     linkedIn: "",
     nationality: "",
@@ -24,6 +31,10 @@ export const emptyPersonalDetails = {
 // The footer asks candidates to avoid parentheses, slashes and the like.
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// The picked phone code's entry; India when none was picked.
+export const phoneCodeFor = (code) =>
+    phoneCodes.find((entry) => entry.code === code) ?? phoneCodes.find((entry) => entry.code === DEFAULT_PHONE_CODE);
 
 // Returns { field: message } for every invalid field; empty when valid.
 export function validatePersonalDetails(values) {
@@ -51,8 +62,12 @@ export function validatePersonalDetails(values) {
     if (!errors.linkedIn && !/linkedin\.com\/?/i.test(values.linkedIn)) {
         errors.linkedIn = "Enter a LinkedIn profile URL.";
     }
+    // Applications saved before the code picker existed have no phoneCode.
+    const { digits: lengths } = phoneCodeFor(values.phoneCode);
     const digits = values.phone.replace(/\D/g, "");
-    if (values.phone.trim() && digits.length !== 10) errors.phone = "Enter a 10-digit phone number.";
+    if (values.phone.trim() && !lengths.includes(digits.length)) {
+        errors.phone = `Enter a ${lengths.join(" or ")}-digit phone number.`;
+    }
 
     return errors;
 }
@@ -121,7 +136,14 @@ export default function PersonalDetailsForm({ values, errors, onChange, role }) 
                     </div>
                 </ApplyField>
                 <ApplyField id="phone" label="Phone Number" error={errors.phone}>
-                    <ApplyPhoneInput {...control("phone")} autoComplete="tel-national" placeholder="9876543210" />
+                    <ApplyPhoneInput
+                        {...control("phone")}
+                        countryCode={phoneCodeFor(values.phoneCode).code}
+                        codes={phoneCodes}
+                        onCountryCodeChange={(code) => onChange({ ...values, phoneCode: code }, "phone")}
+                        autoComplete="tel-national"
+                        placeholder="9876543210"
+                    />
                 </ApplyField>
                 <ApplyField id="linkedIn" label="LinkedIn Profile URL" required error={errors.linkedIn}>
                     {text("linkedIn", { type: "url", autoComplete: "url", placeholder: "linkedin.com/in/your-name" })}

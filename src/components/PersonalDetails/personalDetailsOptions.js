@@ -77,3 +77,17 @@ export const countryStates = {
 export const countries = Object.keys(countryStates);
 
 export const genders = ["Female", "Male", "Non-binary", "Prefer not to say"];
+
+// Phone country codes for the same countries, with the length of a local
+// (national) number there, used by the phone check.
+export const phoneCodes = [
+    { country: "India", code: "+91", digits: [10] },
+    { country: "Saudi Arabia", code: "+966", digits: [9] },
+    { country: "United Arab Emirates", code: "+971", digits: [9] },
+    { country: "Qatar", code: "+974", digits: [8] },
+    { country: "Kuwait", code: "+965", digits: [8] },
+    { country: "Oman", code: "+968", digits: [8] },
+    { country: "Bahrain", code: "+973", digits: [8] },
+];
+
+export const DEFAULT_PHONE_CODE = "+91";
