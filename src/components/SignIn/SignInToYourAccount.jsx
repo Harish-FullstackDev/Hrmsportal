@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+import { safeNext, withNext } from "@/lib/nextPath";
 import { createClient } from "@/lib/supabase/client";
+import PrivacyPolicy from "@/components/CommonComponents/PrivacyPolicy";
 import {
     AuthCard,
     Checkbox,
@@ -18,9 +20,12 @@ import {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma 1306:2612 "Login and signup" (Sign In): the sign-in card. Signs in
-// with Supabase and goes to /dashboard.
+// with Supabase and goes to ?next= (the page that sent the visitor here,
+// e.g. a job's apply link) or /dashboard. Create an Account keeps ?next=.
+// Reads the query with useSearchParams, so the page wraps this in <Suspense>.
 export default function SignInToYourAccount() {
     const router = useRouter();
+    const next = safeNext(useSearchParams().get("next"));
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(false);
@@ -55,7 +60,7 @@ export default function SignInToYourAccount() {
             return;
         }
 
-        router.push("/dashboard");
+        router.push(next ?? "/dashboard");
         router.refresh();
     };
 
@@ -121,11 +126,15 @@ export default function SignInToYourAccount() {
             <p className={textClass}>
                 Don&apos;t have an account?{" "}
                 <Link
-                    href="/sign-up"
+                    href={withNext("/sign-up", next)}
                     className="text-action underline [text-underline-position:from-font] decoration-from-font hover:no-underline"
                 >
                     Create an Account
                 </Link>
+            </p>
+
+            <p className="text-xs leading-[18px] text-muted-ink">
+                By signing in, you agree to our <PrivacyPolicy />.
             </p>
         </AuthCard>
     );

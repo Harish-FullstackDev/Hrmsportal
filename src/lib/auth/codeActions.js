@@ -1,7 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendCodeEmail } from "@/lib/email/sendCodeEmail";
+import { createClient } from "@/lib/supabase/server";
+import { sendAccountCreatedEmail, sendCodeEmail } from "@/lib/email/sendCodeEmail";
 
 // Server Actions that create the 6-digit auth codes with Supabase's admin
 // generateLink (which sends nothing) and email them from the app. The pages
@@ -89,6 +92,32 @@ export async function resendSignupCode(email) {
     const { data, error } = await createAdminClient().auth.admin.generateLink({ type: "magiclink", email });
     if (error) return { error: error.message };
     return deliver("signup", email, data.properties.email_otp);
+}
+
+// After the sign-up code is verified: emails "account created" to the
+// signed-in user, once. Takes no input; the session cookie decides who gets
+// it, and app_metadata.welcome_email_sent_at (which users can't edit) stops
+// repeats.
+export async function sendWelcomeEmail() {
+    const { data: { user } } = await (await createClient()).auth.getUser();
+    if (!user?.email || !user.email_confirmed_at || user.app_metadata?.welcome_email_sent_at) return { ok: true };
+
+    const admin = createAdminClient();
+    const mark = (value) =>
+        admin.auth.admin.updateUserById(user.id, { app_metadata: { welcome_email_sent_at: value } });
+
+    const marked = await mark(new Date().toISOString());
+    if (marked.error) return { error: marked.error.message };
+
+    const origin = (await headers()).get("origin");
+    try {
+        await sendAccountCreatedEmail(user.email, user.user_metadata?.first_name, origin ? `${origin}/` : null);
+        return { ok: true };
+    } catch (err) {
+        console.error("[auth] sending account-created email failed:", err);
+        await mark(null);
+        return { error: "We couldn't send the email." };
+    }
 }
 
 // Forgot password (and its "Resend Code"): emails a recovery code if the

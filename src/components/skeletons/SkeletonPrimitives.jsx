@@ -26,6 +26,32 @@ export function SkeletonField({ inputClassName = "h-14" }) {
     );
 }
 
+// Shape of the job pages (components/Jobs): header bar, an optional banner
+// (a job), then a column of job cards.
+export function SkeletonJobs({ banner = false, cards = 3 }) {
+    return (
+        <div className="flex min-h-dvh flex-1 flex-col bg-white">
+            <div className="border-b border-primary-200">
+                <div className="flex w-full items-center justify-between px-4 pt-6 pb-4 sm:px-16 lg:pt-8 lg:pb-6">
+                    <div className="flex gap-8">
+                        <Shimmer className="h-6 w-20" rounded="rounded-md" />
+                        <Shimmer className="h-6 w-24" rounded="rounded-md" />
+                        <Shimmer className="h-6 w-24" rounded="rounded-md" />
+                        <Shimmer className="h-6 w-28" rounded="rounded-md" />
+                    </div>
+                    <Shimmer className="h-8 w-40" rounded="rounded-md" />
+                </div>
+            </div>
+            {banner && <Shimmer className="h-[220px] w-full" rounded="rounded-none" />}
+            <div className="flex w-full flex-col gap-7 px-4 py-10 sm:px-16 sm:py-16">
+                {Array.from({ length: cards }, (_, i) => (
+                    <Shimmer key={i} className="h-[188px] w-full" rounded="rounded-xl" />
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // Shape of the sign-in / sign-up pages: header bar, headline on the left,
 // card on the right, avatar strip at the bottom.
 export function SkeletonLogin({ fields = 2 }) {

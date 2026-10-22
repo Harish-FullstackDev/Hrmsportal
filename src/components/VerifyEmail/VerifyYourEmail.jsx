@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+import { safeNext, withNext } from "@/lib/nextPath";
 import { createClient } from "@/lib/supabase/client";
-import { resendSignupCode, sendRecoveryCode } from "@/lib/auth/codeActions";
+import { resendSignupCode, sendRecoveryCode, sendWelcomeEmail } from "@/lib/auth/codeActions";
 import {
     AuthCard,
     FormMessage,
@@ -20,8 +21,10 @@ const linkClass =
 
 // Figma 1306:2411 "Login and signup" (Verify your email): the step after
 // sign-up. The server emails a 6-digit code (lib/auth/codeActions);
-// verifying it signs the user in and shows /email-verified. Reads the address from ?email=, so the page wraps this
-// in <Suspense>.
+// verifying it signs the user in, emails "account created" and shows
+// /email-verified. Reads the address from ?email=, so the page wraps this
+// in <Suspense>. A sign-up's ?next= (see SignInToYourAccount) is passed on
+// to /email-verified.
 //
 // The same card is the forgot-password OTP step (flow="recovery"): verifying
 // the recovery code signs the user in and goes on to /reset-password.
@@ -33,7 +36,9 @@ const FLOWS = {
 export default function VerifyYourEmail({ flow = "signup" }) {
     const { type, next, changeEmailHref } = FLOWS[flow];
     const router = useRouter();
-    const email = useSearchParams().get("email") ?? "";
+    const searchParams = useSearchParams();
+    const email = searchParams.get("email") ?? "";
+    const returnTo = flow === "signup" ? safeNext(searchParams.get("next")) : null;
     const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(""));
     const [error, setError] = useState(null);
     const [notice, setNotice] = useState(null);
@@ -79,6 +84,10 @@ export default function VerifyYourEmail({ flow = "signup" }) {
         setNotice(null);
         const supabase = createClient();
         const { error: verifyError } = await supabase.auth.verifyOtp({ email, token, type });
+
+        // New account confirmed: send the "account created" email. A failed
+        // send is logged on the server and doesn't block the success page.
+        if (!verifyError && flow === "signup") await sendWelcomeEmail().catch(() => {});
         setSubmitting(false);
 
         if (verifyError) {
@@ -90,7 +99,7 @@ export default function VerifyYourEmail({ flow = "signup" }) {
             return;
         }
 
-        router.push(next);
+        router.push(withNext(next, returnTo));
     };
 
     const handleResend = async () => {
@@ -112,7 +121,7 @@ export default function VerifyYourEmail({ flow = "signup" }) {
                     We&apos;ve sent a {CODE_LENGTH}-digit verification code to your registered email address.
                     <span className="mt-[14px] flex items-center justify-between gap-4">
                         <span className="min-w-0 truncate text-muted-ink">{email}</span>
-                        <Link href={changeEmailHref} className={`shrink-0 ${linkClass}`}>
+                        <Link href={withNext(changeEmailHref, returnTo)} className={`shrink-0 ${linkClass}`}>
                             Change Email
                         </Link>
                     </span>

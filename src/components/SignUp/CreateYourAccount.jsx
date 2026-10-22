@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { signUpWithCode } from "@/lib/auth/codeActions";
+import { safeNext, withNext } from "@/lib/nextPath";
+import PrivacyPolicy from "@/components/CommonComponents/PrivacyPolicy";
 import {
     AuthCard,
     Checkbox,
@@ -19,9 +21,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma 1306:2212 "Login and signup" (Sign Up): the create-account card.
 // Creates the unconfirmed Supabase user (name in the user's metadata) on the
-// server, which emails a 6-digit code; the user goes on to /verify-email.
+// server, which emails a 6-digit code; the user goes on to /verify-email,
+// carrying ?next= (see SignInToYourAccount). The page wraps this in <Suspense>.
 export default function CreateYourAccount() {
     const router = useRouter();
+    const next = safeNext(useSearchParams().get("next"));
     const [email, setEmail] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -54,7 +58,7 @@ export default function CreateYourAccount() {
             return;
         }
 
-        router.push(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+        router.push(withNext(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`, next));
     };
 
     return (
@@ -111,7 +115,9 @@ export default function CreateYourAccount() {
                     }}
                     boxClassName="rounded-[4px] border-neutral-300"
                 >
-                    I Agree to the Terms of Use and Privacy Policy
+                    <span>
+                        I Agree to the Terms of Use and <PrivacyPolicy />
+                    </span>
                 </Checkbox>
 
                 {error && <FormMessage>{error}</FormMessage>}
@@ -122,7 +128,7 @@ export default function CreateYourAccount() {
             <p className={textClass}>
                 Already have an account?{" "}
                 <Link
-                    href="/"
+                    href={withNext("/", next)}
                     className="text-action underline [text-underline-position:from-font] decoration-from-font hover:no-underline"
                 >
                     Sign in

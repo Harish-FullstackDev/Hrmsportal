@@ -9,7 +9,8 @@ import ApplyStage from "@/components/Apply/ApplyStage";
 import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
 import { isStageComplete } from "@/components/Apply/stageCompletion";
-import { jobDetails } from "@/components/JobDetails/jobDetailsData";
+import { useApplyJob } from "@/components/Apply/ApplyShell";
+import { recordApplication } from "@/components/Jobs/candidateStorage";
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
 import {
     AdditionalInformation,
@@ -22,8 +23,10 @@ import {
 // then asks the review's own questions (connection, source, referral) and the
 // declaration. Submit checks those first, then re-checks all stages and lists
 // any that are incomplete.
-// TODO: send the application to the backend; for now Submit only confirms.
+// TODO: send the application to the backend; for now Submit only records it
+// in this browser, for My Application.
 const ReviewSubmitPage = () => {
+    const job = useApplyJob();
     const { resume, resumeUrl, stepData, setStepData } = useApplication();
     const [incomplete, setIncomplete] = useState([]);
     const [status, setStatus] = useState("idle"); // idle | submitting | submitted
@@ -43,12 +46,13 @@ const ReviewSubmitPage = () => {
         if (missing.length > 0) return;
 
         setStatus("submitting");
+        recordApplication({ id: crypto.randomUUID(), position: job.title, resumeName: resume?.name });
         setTimeout(() => setStatus("submitted"), 600);
     };
 
     return (
         <ApplyStage className="flex flex-col gap-8">
-            <ApplicationReview resume={resume} resumeUrl={resumeUrl} role={jobDetails.title} data={stepData} />
+            <ApplicationReview resume={resume} resumeUrl={resumeUrl} role={job.title} data={stepData} />
             <AdditionalInformation values={values} errors={errors} onChange={handleChange} />
 
             <div className="mt-4 flex flex-col gap-6">
@@ -71,7 +75,9 @@ const ReviewSubmitPage = () => {
 
                 {status === "submitted" && (
                     <p role="status" className="rounded-lg border border-[#008e59] bg-[#d9ebe0] px-4 py-3 text-sm leading-5 text-[#00794c]">
-                        Thank you! Your application for {jobDetails.title} is ready. (Submission isn&apos;t connected to the server yet.)
+                        Thank you! Your application for {job.title} is ready. (Submission isn&apos;t connected to the server
+                        yet; it is listed under <Link href="/my-applications" className="underline">My Application</Link> in
+                        this browser.)
                     </p>
                 )}
 

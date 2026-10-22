@@ -6,7 +6,7 @@ import ApplyStage from "@/components/Apply/ApplyStage";
 import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref } from "@/components/Apply/applySteps";
 import useStageForm from "@/components/Apply/useStageForm";
-import { jobDetails } from "@/components/JobDetails/jobDetailsData";
+import { useApplyJob } from "@/components/Apply/ApplyShell";
 import PersonalDetailsForm, {
     emptyPersonalDetails,
     validatePersonalDetails,
@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 // entered, otherwise from the signed-in account's name and email. Role is
 // fixed to the job's title. Next validates and moves to stage 3; Back returns to stage 1.
 const PersonalDetailsPage = () => {
+    const job = useApplyJob();
     const { values, setValues, errors, handleChange, handleBack, handleNext, hadSavedValues } = useStageForm({
         slug: "personal-details",
         initial: emptyPersonalDetails,
@@ -50,7 +51,7 @@ const PersonalDetailsPage = () => {
 
     return (
         <ApplyStage className="flex flex-col gap-12">
-            <PersonalDetailsForm values={values} errors={errors} onChange={handleChange} role={jobDetails.title} />
+            <PersonalDetailsForm values={values} errors={errors} onChange={handleChange} role={job.title} />
             <ApplyStepFooter backHref={applyStepHref(0)} onBack={handleBack} onNext={handleNext} />
         </ApplyStage>
     );

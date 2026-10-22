@@ -6,11 +6,11 @@ import { loadApplication, saveApplication, saveResume } from "@/components/Apply
 
 // Holds the in-progress application while the candidate moves between stages.
 // It lives in the /apply layout and is also saved to this browser tab (see
-// applicationStorage.js), so a reload restores it. Nothing is sent anywhere
-// yet.
+// applicationStorage.js), so a reload restores it, unless it was for another
+// job (`jobSlug`). Nothing is sent anywhere yet.
 const ApplicationContext = createContext(null);
 
-export function ApplicationProvider({ children }) {
+export function ApplicationProvider({ jobSlug, children }) {
     const [resume, setResumeState] = useState(null);
     // Form values per stage, keyed by the stage slug.
     const [stepData, setStepDataState] = useState({});
@@ -26,7 +26,7 @@ export function ApplicationProvider({ children }) {
 
     useEffect(() => {
         let cancelled = false;
-        loadApplication().then((saved) => {
+        loadApplication(jobSlug).then((saved) => {
             if (cancelled) return;
             if (saved) {
                 setStepDataState(saved.stepData);
@@ -38,11 +38,11 @@ export function ApplicationProvider({ children }) {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [jobSlug]);
 
     useEffect(() => {
-        if (restored) saveApplication({ stepData, maxVisited, hasResume: Boolean(resume) });
-    }, [restored, stepData, maxVisited, resume]);
+        if (restored) saveApplication({ jobSlug, stepData, maxVisited, hasResume: Boolean(resume) });
+    }, [restored, jobSlug, stepData, maxVisited, resume]);
 
     const setResume = useCallback((file) => {
         setResumeState(file);

@@ -4,7 +4,7 @@ import ApplyStage from "@/components/Apply/ApplyStage";
 import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref } from "@/components/Apply/applySteps";
 import useStageForm from "@/components/Apply/useStageForm";
-import { jobDetails } from "@/components/JobDetails/jobDetailsData";
+import { useApplyJob } from "@/components/Apply/ApplyShell";
 import SkillsCertificationsForm, {
     emptySkillsCertifications,
     validateSkillsCertifications,
@@ -13,6 +13,7 @@ import SkillsCertificationsForm, {
 // Figma frame 1380:3503: stage 4 of 6. Next validates and moves to stage 5;
 // Back keeps the entries and returns to stage 3.
 const SkillsCertificationsPage = () => {
+    const { roleSkills } = useApplyJob();
     const { values, errors, handleChange, handleBack, handleNext } = useStageForm({
         slug: "skills-and-certifications",
         initial: emptySkillsCertifications,
@@ -27,7 +28,7 @@ const SkillsCertificationsPage = () => {
                 values={values}
                 errors={errors}
                 onChange={handleChange}
-                roleSkills={jobDetails.roleSkills}
+                roleSkills={roleSkills}
             />
             <ApplyStepFooter backHref={applyStepHref(2)} onBack={handleBack} onNext={handleNext} />
         </ApplyStage>

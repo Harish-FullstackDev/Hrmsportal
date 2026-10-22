@@ -31,11 +31,13 @@ async function withStore(mode, run) {
 }
 
 // { stepData, maxVisited, resume } from a previous visit in this tab, or null.
-export async function loadApplication() {
+// An application started for a different job is not restored.
+export async function loadApplication(jobSlug) {
     try {
         const raw = sessionStorage.getItem(KEY);
         if (!raw) return null;
-        const { stepData = {}, maxVisited = 0, hasResume = false } = JSON.parse(raw);
+        const { jobSlug: savedFor, stepData = {}, maxVisited = 0, hasResume = false } = JSON.parse(raw);
+        if (savedFor !== jobSlug) return null;
         const resume = hasResume ? await withStore("readonly", (store) => store.get(KEY)).catch(() => null) : null;
         return { stepData, maxVisited, resume: resume ?? null };
     } catch {
@@ -43,9 +45,9 @@ export async function loadApplication() {
     }
 }
 
-export function saveApplication({ stepData, maxVisited, hasResume }) {
+export function saveApplication({ jobSlug, stepData, maxVisited, hasResume }) {
     try {
-        sessionStorage.setItem(KEY, JSON.stringify({ stepData, maxVisited, hasResume }));
+        sessionStorage.setItem(KEY, JSON.stringify({ jobSlug, stepData, maxVisited, hasResume }));
     } catch {
         // Storage full or blocked: keep working in memory.
     }

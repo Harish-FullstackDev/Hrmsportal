@@ -52,12 +52,16 @@ export default function UpdateYourPassword() {
         setError(null);
         const supabase = createClient();
         const { error: updateError } = await supabase.auth.updateUser({ password });
-        setSubmitting(false);
 
         if (updateError) {
+            setSubmitting(false);
             setError(updateError.message);
             return;
         }
+
+        // End the recovery session so the user signs in with the new password.
+        await supabase.auth.signOut();
+        setSubmitting(false);
 
         router.push("/reset-password/success");
     };
