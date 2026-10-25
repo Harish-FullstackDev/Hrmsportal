@@ -113,13 +113,13 @@ export default function PersonalDetailsForm({ values, errors, onChange, role }) 
                     hint={NAME_HINT}
                     error={errors.firstName}
                 >
-                    {text("firstName", { autoComplete: "given-name", placeholder: "Enter your first name" }, NAME_HINT)}
+                    {text("firstName", { autoComplete: "given-name", placeholder: "Ex: Akshara" }, NAME_HINT)}
                 </ApplyField>
                 <ApplyField id="lastName" label="Last Name" required error={errors.lastName}>
-                    {text("lastName", { autoComplete: "family-name", placeholder: "Enter your last name" })}
+                    {text("lastName", { autoComplete: "family-name", placeholder: "Ex: VS" })}
                 </ApplyField>
                 <ApplyField id="email" label="Email address" required error={errors.email}>
-                    {text("email", { type: "email", autoComplete: "email", placeholder: "Enter your email address" })}
+                    {text("email", { type: "email", autoComplete: "email", placeholder: "Ex: akshara@gmail.com" })}
                 </ApplyField>
 
                 <ApplyField id="role" label="Role" required hint="Set by the job you are applying for">
@@ -135,6 +135,35 @@ export default function PersonalDetailsForm({ values, errors, onChange, role }) 
                         />
                     </div>
                 </ApplyField>
+                <ApplyField id="gender" label="Gender" required error={errors.gender}>
+                    <div
+                        role="radiogroup"
+                        aria-label="Gender"
+                        aria-invalid={Boolean(errors.gender) || undefined}
+                        aria-describedby={messageIdFor("gender", { error: errors.gender })}
+                        className="flex h-[42px] flex-wrap items-center gap-x-6 gap-y-1"
+                    >
+                        {genders.map((gender, index) => (
+                            <label key={gender} className="flex cursor-pointer items-center gap-2 text-sm leading-5 text-ink">
+                                <input
+                                    // The first radio takes the field id so the label and error focus reach it.
+                                    id={index === 0 ? "gender" : undefined}
+                                    type="radio"
+                                    name="gender"
+                                    value={gender}
+                                    checked={values.gender === gender}
+                                    onChange={set("gender")}
+                                    className="size-4 cursor-pointer accent-action"
+                                />
+                                {gender}
+                            </label>
+                        ))}
+                    </div>
+                </ApplyField>
+                <ApplyField id="linkedIn" label="LinkedIn Profile URL" required error={errors.linkedIn}>
+                    {text("linkedIn", { type: "url", autoComplete: "url", placeholder: "Ex: linkedin.com/in/aksharavs" })}
+                </ApplyField>
+
                 <ApplyField id="phone" label="Phone Number" error={errors.phone}>
                     <ApplyPhoneInput
                         {...control("phone")}
@@ -145,34 +174,27 @@ export default function PersonalDetailsForm({ values, errors, onChange, role }) 
                         placeholder="9876543210"
                     />
                 </ApplyField>
-                <ApplyField id="linkedIn" label="LinkedIn Profile URL" required error={errors.linkedIn}>
-                    {text("linkedIn", { type: "url", autoComplete: "url", placeholder: "linkedin.com/in/your-name" })}
-                </ApplyField>
-
                 <ApplyField id="nationality" label="Nationality" required error={errors.nationality}>
-                    {text("nationality", { placeholder: "Enter your Nationality" })}
+                    {text("nationality", { placeholder: "Ex: Indian" })}
                 </ApplyField>
                 <ApplyField id="country" label="Country" required error={errors.country}>
                     {select("country", {
                         autoComplete: "country-name",
-                        placeholder: "Select Your Country",
+                        placeholder: "Ex: India",
                         options: countries,
                     })}
                 </ApplyField>
+
                 <ApplyField id="state" label="State" required error={errors.state}>
                     {select("state", {
                         autoComplete: "address-level1",
-                        placeholder: values.country ? "Select Your State" : "Select a country first",
+                        placeholder: values.country ? "Ex: Tamil Nadu" : "Select a country first",
                         options: states,
                         disabled: !values.country,
                     })}
                 </ApplyField>
-
                 <ApplyField id="city" label="City" required error={errors.city}>
-                    {text("city", { autoComplete: "address-level2", placeholder: "Enter Your City" })}
-                </ApplyField>
-                <ApplyField id="gender" label="Gender" required error={errors.gender}>
-                    {select("gender", { placeholder: "Select one option", options: genders })}
+                    {text("city", { autoComplete: "address-level2", placeholder: "Ex: Chennai" })}
                 </ApplyField>
             </div>
         </section>

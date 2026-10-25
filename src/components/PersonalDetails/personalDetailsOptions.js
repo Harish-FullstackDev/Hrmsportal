@@ -76,7 +76,7 @@ export const countryStates = {
 
 export const countries = Object.keys(countryStates);
 
-export const genders = ["Female", "Male", "Non-binary", "Prefer not to say"];
+export const genders = ["Male", "Female", "Prefer not to say"];
 
 // Phone country codes for the same countries, with the length of a local
 // (national) number there, used by the phone check.

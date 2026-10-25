@@ -1,5 +1,5 @@
 import { ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
-import { ApplyTextInput } from "@/components/Apply/ApplyFormControls";
+import { ApplySelect, ApplyTextInput } from "@/components/Apply/ApplyFormControls";
 import { skills as skillOptions } from "@/components/ExperienceEducation/experienceOptions";
 import RoleSkillsCheck from "@/components/SkillsCertifications/RoleSkillsCheck";
 
@@ -17,12 +17,24 @@ const certificationOptions = [
     "Human Factors International CXA",
 ];
 
+// Kinds of work link a candidate can add; each link row picks one.
+export const LINK_TYPES = ["Portfolio", "GitHub", "Behance", "Dribbble", "Personal Website", "Other"];
+export const MAX_LINKS = 5;
+const emptyLink = () => ({ type: LINK_TYPES[0], url: "" });
+
 export const emptySkillsCertifications = {
     skills: [],
     roleSkills: {},
     certifications: [],
-    portfolio: "",
+    links: [emptyLink()],
 };
+
+// The candidate's work links. Answers saved before links existed kept a
+// single `portfolio` string.
+export const workLinks = (values) =>
+    values.links ?? (values.portfolio ? [{ type: LINK_TYPES[0], url: values.portfolio }] : [emptyLink()]);
+
+const linkId = (index) => `workLink-${index}`;
 
 const URL_PATTERN = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
 
@@ -35,10 +47,9 @@ export function validateSkillsCertifications(values) {
     if (ticked.length === 0) errors.roleSkills = "Tick at least one skill you have.";
     else if (ticked.some(([, level]) => !level)) errors.roleSkills = "Choose a level for every ticked skill.";
 
-    if (values.certifications.length === 0) errors.certifications = "Add at least one certification.";
-    if (values.portfolio.trim() && !URL_PATTERN.test(values.portfolio.trim())) {
-        errors.portfolio = "Enter a valid link.";
-    }
+    workLinks(values).forEach((link, index) => {
+        if (link.url.trim() && !URL_PATTERN.test(link.url.trim())) errors[linkId(index)] = "Enter a valid link.";
+    });
     return errors;
 }
 
@@ -59,9 +70,76 @@ function FieldError({ id, children }) {
     ) : null;
 }
 
+// Portfolio, GitHub and other work links: each row picks the kind of link and
+// takes its URL; rows can be added (up to MAX_LINKS) and removed. Optional.
+function WorkLinks({ links, errors, onChange }) {
+    const update = (index, field, value) =>
+        onChange(
+            links.map((link, i) => (i === index ? { ...link, [field]: value } : link)),
+            index,
+        );
+
+    return (
+        <div className="flex min-w-0 flex-col gap-2">
+            <FieldLabel htmlFor={linkId(0)}>Portfolio, GitHub or Other Work links</FieldLabel>
+            {links.map((link, index) => (
+                <div key={index} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <div className="w-[150px] shrink-0">
+                            <ApplySelect
+                                id={`${linkId(index)}-type`}
+                                name={`${linkId(index)}-type`}
+                                value={link.type}
+                                onChange={(event) => update(index, "type", event.target.value)}
+                                options={LINK_TYPES}
+                                placeholder="Link type"
+                            />
+                        </div>
+                        {/* Figma draws this field grey (#f9fafb) like the certification one. */}
+                        <div className="min-w-0 flex-1 [&_input]:bg-[#f9fafb] [&_input]:placeholder:text-hint">
+                            <ApplyTextInput
+                                id={linkId(index)}
+                                name={linkId(index)}
+                                type="url"
+                                autoComplete="url"
+                                aria-label={`${link.type} link`}
+                                value={link.url}
+                                onChange={(event) => update(index, "url", event.target.value)}
+                                placeholder="Enter your link"
+                                invalid={Boolean(errors[linkId(index)])}
+                                describedBy={errors[linkId(index)] ? `${linkId(index)}-message` : undefined}
+                            />
+                        </div>
+                        {links.length > 1 && (
+                            <button
+                                type="button"
+                                onClick={() => onChange(links.filter((_, i) => i !== index), index)}
+                                aria-label={`Remove ${link.type} link`}
+                                className="flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-border-default text-lg leading-none text-muted-ink transition-colors hover:border-required hover:text-required"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                    <FieldError id={`${linkId(index)}-message`}>{errors[linkId(index)]}</FieldError>
+                </div>
+            ))}
+            {links.length < MAX_LINKS && (
+                <button
+                    type="button"
+                    onClick={() => onChange([...links, emptyLink()], links.length)}
+                    className="w-fit text-sm leading-5 font-medium text-action underline-offset-2 hover:underline"
+                >
+                    + Add another link
+                </button>
+            )}
+        </div>
+    );
+}
+
 // Figma 1380:3560: stage 4 of the application. Skills picker (label 8 above
 // the field), the role's skills check panel 24 below it, then certification
-// and portfolio side by side (417 wide, 20 apart) 32 below the panel.
+// and work links side by side (417 wide, 20 apart) 32 below the panel.
 export default function SkillsCertificationsForm({ values, errors, onChange, roleSkills }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
 
@@ -103,7 +181,7 @@ export default function SkillsCertificationsForm({ values, errors, onChange, rol
 
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-[417px_417px]">
                 <div className="flex min-w-0 flex-col gap-2">
-                    <FieldLabel htmlFor="certifications" required>
+                    <FieldLabel htmlFor="certifications">
                         Certification
                     </FieldLabel>
                     <ApplyTagPicker
@@ -121,24 +199,11 @@ export default function SkillsCertificationsForm({ values, errors, onChange, rol
                     <FieldError id="certifications-message">{errors.certifications}</FieldError>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-2">
-                    <FieldLabel htmlFor="portfolio">Portfolio, GitHub or Other Work link</FieldLabel>
-                    {/* Figma draws this field grey (#f9fafb) like the certification one. */}
-                    <div className="[&_input]:bg-[#f9fafb] [&_input]:placeholder:text-hint">
-                        <ApplyTextInput
-                            id="portfolio"
-                            name="portfolio"
-                            type="url"
-                            autoComplete="url"
-                            value={values.portfolio}
-                            onChange={(event) => setValue("portfolio", event.target.value)}
-                            placeholder="Enter your link"
-                            invalid={Boolean(errors.portfolio)}
-                            describedBy={errors.portfolio ? "portfolio-message" : undefined}
-                        />
-                    </div>
-                    <FieldError id="portfolio-message">{errors.portfolio}</FieldError>
-                </div>
+                <WorkLinks
+                    links={workLinks(values)}
+                    errors={errors}
+                    onChange={(next, index) => onChange({ ...values, links: next }, linkId(index))}
+                />
             </div>
         </section>
     );

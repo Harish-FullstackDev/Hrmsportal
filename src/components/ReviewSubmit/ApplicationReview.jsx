@@ -3,6 +3,7 @@ import { applyStepHref } from "@/components/Apply/applySteps";
 import { availabilityLabels, formatSalary } from "@/components/AvailabilityCompensation/AvailabilityCompensationForm";
 import { experienceLabels, universityName } from "@/components/ExperienceEducation/ExperienceEducationForm";
 import { phoneCodeFor } from "@/components/PersonalDetails/PersonalDetailsForm";
+import { workLinks } from "@/components/SkillsCertifications/SkillsCertificationsForm";
 import { ReviewField, ReviewGrid, ReviewSection, ReviewSkillLevels } from "@/components/ReviewSubmit/ReviewParts";
 
 // Native date inputs store yyyy-mm-dd; the review shows dd/mm/yyyy.
@@ -64,18 +65,18 @@ export default function ApplicationReview({ resume, resumeUrl, role, data }) {
                     <ReviewField label="Last Name" required value={personal.lastName} />
                     <ReviewField label="Email address" required value={personal.email} />
                     <ReviewField label="Role" required value={role} />
+                    <ReviewField label="Gender" required value={personal.gender} />
+                    <ReviewField label="LinkedIn Profile URL" required value={personal.linkedIn} />
                     <ReviewField
                         label="Phone Number"
                         value={personal.phone}
                         kind="phone"
                         phoneCode={phoneCodeFor(personal.phoneCode).code}
                     />
-                    <ReviewField label="LinkedIn Profile URL" required value={personal.linkedIn} />
                     <ReviewField label="Nationality" required value={personal.nationality} />
                     <ReviewField label="Country" required value={personal.country} kind="select" />
                     <ReviewField label="State" required value={personal.state} kind="select" />
                     <ReviewField label="City" required value={personal.city} />
-                    <ReviewField label="Gender" required value={personal.gender} kind="select" />
                 </ReviewGrid>
             </ReviewSection>
 
@@ -88,7 +89,6 @@ export default function ApplicationReview({ resume, resumeUrl, role, data }) {
                             required
                             value={field === "university" ? universityName(experience) : experience[field]}
                             kind={EXPERIENCE_SELECTS.has(field) ? "select" : undefined}
-                            className={field === "skills" ? "md:col-span-2 lg:col-span-3 lg:max-w-[417px]" : ""}
                         />
                     ))}
                 </ReviewGrid>
@@ -103,14 +103,15 @@ export default function ApplicationReview({ resume, resumeUrl, role, data }) {
                     <dl className="grid gap-5 md:grid-cols-2 lg:grid-cols-[417px_417px]">
                         <ReviewField
                             label="Certification"
-                            required
                             value={skills.certifications}
                             tone="muted"
                             valueClassName="text-[#0284c7]"
                         />
                         <ReviewField
-                            label="Portfolio, GitHub or Other Work link"
-                            value={skills.portfolio}
+                            label="Portfolio, GitHub or Other Work links"
+                            value={workLinks(skills)
+                                .filter((link) => link.url.trim())
+                                .map((link) => `${link.type}: ${link.url.trim()}`)}
                             tone="muted"
                             valueClassName="text-hint"
                         />

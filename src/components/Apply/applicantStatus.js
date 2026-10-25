@@ -25,7 +25,6 @@ const WORKED_EXPERIENCE = [
     "fieldOfStudy",
     "university",
     "graduationYear",
-    "skills",
 ];
 
 const EXPERIENCE_FIELDS = {
