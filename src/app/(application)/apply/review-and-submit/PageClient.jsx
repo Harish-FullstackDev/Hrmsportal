@@ -65,6 +65,12 @@ const ReviewSubmitPage = () => {
                         Your application form has been successfully submitted and an email notification will be sent to
                         you shortly. Please refer to your email for the next step.
                     </p>
+                    <Link
+                        href="/my-applications"
+                        className="mt-8 rounded-[7px] border border-action bg-action px-4 py-2 text-base leading-[1.5] text-white transition-colors hover:bg-action/90"
+                    >
+                        View My Applications
+                    </Link>
                 </div>
             </ApplyStage>
         );

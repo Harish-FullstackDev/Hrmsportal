@@ -117,6 +117,7 @@ export default function AvailabilityCompensationForm({ values, errors, onChange,
                 options={languageOptions}
                 placeholder="Enter the languages you know"
                 listLabel="Languages"
+                tagsAbove
                 chevron={false}
                 widthClassName=""
             />

@@ -113,7 +113,7 @@ function Chevron({ onClick, disabled }) {
 }
 
 // Figma 1380:3449 (skills) / 1380:3678 (certifications): entries show as
-// removable tags under the field. With a `max`, the field greys out at the
+// removable tags under the field (or above it, with `tagsAbove`). With a `max`, the field greys out at the
 // limit ("Maximum skills reached") and the red limit line appears. Enter adds
 // the typed text or the highlighted suggestion; Backspace on an empty field
 // removes the last tag. `muted` draws Figma's grey #f9fafb field even below
@@ -131,6 +131,8 @@ export function ApplyTagPicker({
     listLabel = "Selected",
     muted = false,
     chevron = true,
+    // Shows the tags above the field instead (stage 4's skills).
+    tagsAbove = false,
     // Figma's standalone pickers are 417 wide; inside a grid cell pass "".
     widthClassName = "lg:max-w-[417px]",
     invalid,
@@ -155,8 +157,25 @@ export function ApplyTagPicker({
     };
     const remove = (skill) => onChange(value.filter((item) => item !== skill));
 
+    const tags = value.length > 0 && (
+        <ul aria-label={listLabel} className="flex flex-wrap gap-3">
+            {value.map((skill) => (
+                <li
+                    key={skill}
+                    className="flex items-center gap-2 rounded border border-[#0284c7] bg-white px-[11px] py-[5px] text-xs leading-[1.4] text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                >
+                    {skill}
+                    <button type="button" onClick={() => remove(skill)} aria-label={`Remove ${skill}`} className="cursor-pointer">
+                        <Image src={tagRemove} alt="" width={13} height={13} />
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+
     return (
         <div className="flex flex-col gap-2">
+            {tagsAbove && tags}
             <div className={`relative w-full ${widthClassName}`}>
                 <input
                     suppressHydrationWarning
@@ -196,26 +215,7 @@ export function ApplyTagPicker({
                 <p className="text-[11px] leading-[16.5px] font-bold text-[#ef4444] italic">{limitMessage}</p>
             )}
 
-            {value.length > 0 && (
-                <ul aria-label={listLabel} className="flex flex-wrap gap-3">
-                    {value.map((skill) => (
-                        <li
-                            key={skill}
-                            className="flex items-center gap-2 rounded border border-[#0284c7] bg-white px-[11px] py-[5px] text-xs leading-[1.4] text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
-                        >
-                            {skill}
-                            <button
-                                type="button"
-                                onClick={() => remove(skill)}
-                                aria-label={`Remove ${skill}`}
-                                className="cursor-pointer"
-                            >
-                                <Image src={tagRemove} alt="" width={13} height={13} />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
+            {!tagsAbove && tags}
         </div>
     );
 }

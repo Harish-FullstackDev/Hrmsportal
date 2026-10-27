@@ -164,6 +164,7 @@ export default function SkillsCertificationsForm({ values, errors, onChange, rol
                         fullPlaceholder="Maximum skills reached"
                         limitMessage={`Maximum ${MAX_SKILLS} skills allowed`}
                         listLabel="Selected skills"
+                        tagsAbove
                         invalid={Boolean(errors.skills)}
                         describedBy={errors.skills ? "roleSkillsPicker-message" : undefined}
                     />
@@ -191,6 +192,7 @@ export default function SkillsCertificationsForm({ values, errors, onChange, rol
                         options={certificationOptions}
                         placeholder="Add Your Certification"
                         listLabel="Added certifications"
+                        tagsAbove
                         muted
                         chevron={false}
                         invalid={Boolean(errors.certifications)}
