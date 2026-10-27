@@ -45,7 +45,7 @@ const REQUIRED = {
 
 // Labels, shared with the review stage.
 export const experienceLabels = {
-    employmentStatus: "Current Status",
+    employmentStatus: "Current status",
     totalExperience: "Total years of experience",
     relevantExperience: "Relevant experience for this role",
     employer: "Current or most recent employer",
@@ -80,6 +80,50 @@ export function validateExperienceEducation(values) {
 // Fields that open when the status changes fade in.
 const FADE_IN = "motion-safe:animate-[apply-fade-in_300ms_ease-out_both]";
 
+// "Current status" as a row of toggle buttons; the chosen one is filled blue.
+// The first button carries the field id so a validation error can focus it.
+function StatusPicker({ value, error, onChange }) {
+    return (
+        <div className="flex flex-col">
+            <p id="employmentStatus-label" className="text-lg leading-[1.2] font-medium text-[#374151]">
+                {experienceLabels.employmentStatus}
+                <span className="text-[#ef4444]">*</span>
+            </p>
+            <div
+                role="radiogroup"
+                aria-labelledby="employmentStatus-label"
+                aria-describedby={error ? "employmentStatus-message" : undefined}
+                aria-invalid={error ? true : undefined}
+                className="mt-3 flex flex-wrap gap-2"
+            >
+                {statusOptions.map((option, index) => {
+                    const selected = value === option;
+                    return (
+                        <button
+                            key={option}
+                            id={index === 0 ? "employmentStatus" : undefined}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => onChange(option)}
+                            className={`h-9 rounded-md border px-4 text-sm leading-5 transition-colors ${
+                                selected
+                                    ? "border-action bg-action text-white"
+                                    : `bg-white text-ink hover:border-action ${error ? "border-required" : "border-border-default"}`
+                            }`}
+                        >
+                            {option}
+                        </button>
+                    );
+                })}
+            </div>
+            <p id="employmentStatus-message" className="mt-1 min-h-[17px] text-xs leading-[1.4] text-required">
+                {error}
+            </p>
+        </div>
+    );
+}
+
 // Figma 1380:3376 + the status variants (see applicantStatus.js): stage 3 of
 // the application. "Current Status" comes first and decides the rest. Same
 // 3-column grid as stage 2 (20 apart, rows 16 apart). Two columns on tablets,
@@ -88,9 +132,12 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
     const fields = experienceFieldsFor(values.employmentStatus);
     // "Other" opens a name field right after University.
-    const gridFields = fields.flatMap((field) =>
-        field === "university" && values.university === OTHER_UNIVERSITY ? [field, "universityOther"] : [field],
-    );
+    // Status sits above the grid as its own row of buttons.
+    const gridFields = fields
+        .filter((field) => field !== "employmentStatus")
+        .flatMap((field) =>
+            field === "university" && values.university === OTHER_UNIVERSITY ? [field, "universityOther"] : [field],
+        );
 
     const control = (field) => ({
         id: field,
@@ -116,7 +163,6 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
     );
 
     const controls = {
-        employmentStatus: () => select("employmentStatus", statusOptions),
         totalExperience: () => select("totalExperience", experienceRanges),
         relevantExperience: () => select("relevantExperience", experienceRanges),
         employer: () => text("employer", "Enter your employer's name"),
@@ -136,6 +182,11 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
             <h2 id="experience-education-title" className="sr-only">
                 Experience and Education
             </h2>
+            <StatusPicker
+                value={values.employmentStatus}
+                error={errors.employmentStatus}
+                onChange={(next) => setValue("employmentStatus", next)}
+            />
             <div className="grid w-full gap-x-5 gap-y-4 md:grid-cols-2 lg:grid-cols-3">
                 {gridFields.map((field) => (
                     <ApplyField
@@ -144,7 +195,7 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                         label={experienceLabels[field]}
                         required
                         error={errors[field]}
-                        className={field === "employmentStatus" ? "" : FADE_IN}
+                        className={FADE_IN}
                     >
                         {controls[field]()}
                     </ApplyField>

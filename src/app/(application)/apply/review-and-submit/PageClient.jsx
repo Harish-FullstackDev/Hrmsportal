@@ -27,9 +27,9 @@ import {
 // in this browser, for My Application.
 const ReviewSubmitPage = () => {
     const job = useApplyJob();
-    const { resume, resumeUrl, stepData, setStepData } = useApplication();
+    const { resume, resumeUrl, stepData, setStepData, submitted, setSubmitted } = useApplication();
     const [incomplete, setIncomplete] = useState([]);
-    const [status, setStatus] = useState("idle"); // idle | submitting | submitted
+    const [submitting, setSubmitting] = useState(false);
     const { values, errors, handleChange, handleBack, validateNow } = useStageForm({
         slug: "review-and-submit",
         initial: emptyReviewExtras,
@@ -45,10 +45,30 @@ const ReviewSubmitPage = () => {
         setIncomplete(missing);
         if (missing.length > 0) return;
 
-        setStatus("submitting");
+        setSubmitting(true);
         recordApplication({ id: crypto.randomUUID(), position: job.title, resumeName: resume?.name });
-        setTimeout(() => setStatus("submitted"), 600);
+        setTimeout(() => {
+            setSubmitted(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 600);
     };
+
+    if (submitted) {
+        return (
+            <ApplyStage className="flex flex-col items-center px-4 pt-16 pb-24 text-center">
+                <div role="status" className="flex max-w-[460px] flex-col items-center">
+                    <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-[#008e59]">
+                        <path d="M4 12.5l5 5L20 6.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <h2 className="mt-3 text-[32px] leading-[1.2] font-medium text-navy-900">Thank You</h2>
+                    <p className="mt-4 text-sm leading-[1.6] text-muted-ink">
+                        Your application form has been successfully submitted and an email notification will be sent to
+                        you shortly. Please refer to your email for the next step.
+                    </p>
+                </div>
+            </ApplyStage>
+        );
+    }
 
     return (
         <ApplyStage className="flex flex-col gap-8">
@@ -73,21 +93,13 @@ const ReviewSubmitPage = () => {
                     </div>
                 )}
 
-                {status === "submitted" && (
-                    <p role="status" className="rounded-lg border border-[#008e59] bg-[#d9ebe0] px-4 py-3 text-sm leading-5 text-[#00794c]">
-                        Thank you! Your application for {job.title} is ready. (Submission isn&apos;t connected to the server
-                        yet; it is listed under <Link href="/my-applications" className="underline">My Application</Link> in
-                        this browser.)
-                    </p>
-                )}
-
                 <ApplyStepFooter
                     buttons
                     backHref={applyStepHref(4)}
                     onBack={handleBack}
                     onNext={handleSubmit}
-                    nextLabel={status === "submitting" ? "Submitting…" : status === "submitted" ? "Submitted" : "Submit"}
-                    busy={status !== "idle"}
+                    nextLabel={submitting ? "Submitting…" : "Submit"}
+                    busy={submitting}
                 />
             </div>
         </ApplyStage>

@@ -20,6 +20,9 @@ export function ApplicationProvider({ jobSlug, children }) {
     // False until the saved application (if any) has been read back; stages
     // wait for it so their forms start from the restored answers.
     const [restored, setRestored] = useState(false);
+    // True once the application is submitted: the stepper shows every stage
+    // done and the review stage shows the thank-you message.
+    const [submitted, setSubmitted] = useState(false);
     // The open stage's { save, validateNow } (see useStageControl), so the
     // stepper can keep or check its entries before leaving it.
     const stageControlRef = useRef(null);
@@ -65,9 +68,11 @@ export function ApplicationProvider({ jobSlug, children }) {
             maxVisited,
             setMaxVisited,
             restored,
+            submitted,
+            setSubmitted,
             stageControlRef,
         }),
-        [resume, resumeUrl, setResume, stepData, setStepData, maxVisited, restored],
+        [resume, resumeUrl, setResume, stepData, setStepData, maxVisited, restored, submitted],
     );
 
     return <ApplicationContext.Provider value={value}>{children}</ApplicationContext.Provider>;

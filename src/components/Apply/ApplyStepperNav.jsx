@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useApplication } from "@/components/Apply/ApplicationContext";
 import ApplicationStepper from "@/components/Apply/ApplicationStepper";
-import { applyStepHref } from "@/components/Apply/applySteps";
+import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
 import { isStageComplete } from "@/components/Apply/stageCompletion";
 
 // The stepper plus click-to-navigate, alongside the stages' Next/Back.
@@ -16,7 +16,7 @@ import { isStageComplete } from "@/components/Apply/stageCompletion";
 //   between that is still incomplete instead of skipping past it.
 export default function ApplyStepperNav({ currentIndex }) {
     const router = useRouter();
-    const { resume, stepData, maxVisited, setMaxVisited, stageControlRef } = useApplication();
+    const { resume, stepData, maxVisited, setMaxVisited, stageControlRef, submitted } = useApplication();
 
     useEffect(() => {
         if (currentIndex > maxVisited) setMaxVisited(currentIndex);
@@ -44,6 +44,9 @@ export default function ApplyStepperNav({ currentIndex }) {
         }
         router.push(applyStepHref(destination));
     };
+
+    // Once submitted, every stage shows done and none can be reopened.
+    if (submitted) return <ApplicationStepper currentIndex={applySteps.length} maxVisited={-1} />;
 
     return (
         <ApplicationStepper

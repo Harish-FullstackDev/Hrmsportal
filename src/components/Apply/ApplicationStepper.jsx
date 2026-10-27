@@ -130,7 +130,9 @@ export default function ApplicationStepper({ currentIndex, maxVisited = currentI
                 })}
             </ol>
             <p className="mt-3 text-sm leading-5 text-ink md:hidden">
-                Step {currentIndex + 1} of {applySteps.length}: {applySteps[currentIndex].label.replace("\n", " ")}
+                {currentIndex >= applySteps.length
+                    ? "All steps completed"
+                    : `Step ${currentIndex + 1} of ${applySteps.length}: ${applySteps[currentIndex].label.replace("\n", " ")}`}
             </p>
         </nav>
     );

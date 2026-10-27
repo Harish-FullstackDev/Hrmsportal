@@ -11,7 +11,6 @@ const formatDate = (value) => (value ? value.split("-").reverse().join("/") : ""
 
 // Experience answers drawn with a dropdown arrow (they were picked from lists).
 const EXPERIENCE_SELECTS = new Set([
-    "employmentStatus",
     "totalExperience",
     "relevantExperience",
     "qualification",

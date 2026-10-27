@@ -7,10 +7,10 @@
 // (recent graduate).
 
 export const STATUS = {
-    employee: "Current Employee",
+    employee: "Currently employed",
     servingNotice: "Serving Notice",
-    betweenJobs: "Between Jobs",
-    graduate: "Recent Graduate",
+    betweenJobs: "Not Currently employed",
+    graduate: "Freshers",
 };
 
 export const statusOptions = Object.values(STATUS);
