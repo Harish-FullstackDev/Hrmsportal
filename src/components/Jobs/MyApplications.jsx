@@ -249,7 +249,9 @@ function ApplicationCard({ application, job, onWithdraw }) {
 // then one full-width card per application. `jobs` is every open job, loaded
 // on the server; an application only records the position title, so its
 // location and department come from the open job of that title.
-export default function MyApplications({ jobs }) {
+// `embedded` (My Profile, Figma 1867:3647): the page has its own heading, and
+// the tabs sit inside the page margins on a grey rule, the open one in blue.
+export default function MyApplications({ jobs, embedded = false }) {
     const applications = useApplications();
     const [tab, setTab] = useState("active");
 
@@ -258,9 +260,15 @@ export default function MyApplications({ jobs }) {
 
     return (
         <>
-            <div className="w-full bg-white px-4 shadow-[0px_4px_8px_rgba(0,0,0,0.06)] sm:px-16">
-                <h1 className="sr-only">My Applications</h1>
-                <div role="tablist" className="flex items-center gap-8">
+            <div
+                className={
+                    embedded
+                        ? "mx-4 border-b border-border-default bg-white px-4 sm:mx-16 sm:px-8"
+                        : "w-full bg-white px-4 shadow-[0px_4px_8px_rgba(0,0,0,0.06)] sm:px-16"
+                }
+            >
+                {!embedded && <h1 className="sr-only">My Applications</h1>}
+                <div role="tablist" className={`flex items-center ${embedded ? "gap-6" : "gap-8"}`}>
                     {TABS.map((item) => {
                         const selected = item.key === tab;
                         return (
@@ -271,9 +279,13 @@ export default function MyApplications({ jobs }) {
                                 aria-selected={selected}
                                 onClick={() => setTab(item.key)}
                                 className={`cursor-pointer border-b-2 px-1 py-4 text-lg leading-[1.2] transition-colors ${
-                                    selected
-                                        ? "border-ink font-medium text-ink"
-                                        : "border-transparent text-border-strong hover:text-ink-secondary"
+                                    embedded
+                                        ? selected
+                                            ? "border-action font-medium text-action"
+                                            : "border-transparent font-medium text-muted-ink hover:text-ink-secondary"
+                                        : selected
+                                          ? "border-ink font-medium text-ink"
+                                          : "border-transparent text-border-strong hover:text-ink-secondary"
                                 }`}
                             >
                                 {item.label}

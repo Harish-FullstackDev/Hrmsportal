@@ -10,7 +10,8 @@ import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
 import { isStageComplete } from "@/components/Apply/stageCompletion";
 import { useApplyJob } from "@/components/Apply/ApplyShell";
-import { recordApplication } from "@/components/Jobs/candidateStorage";
+import { recordApplication, recordProfile } from "@/components/Jobs/candidateStorage";
+import { phoneCodeFor } from "@/components/PersonalDetails/PersonalDetailsForm";
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
 import {
     AdditionalInformation,
@@ -47,6 +48,14 @@ const ReviewSubmitPage = () => {
 
         setSubmitting(true);
         recordApplication({ id: crypto.randomUUID(), position: job.title, resumeName: resume?.name });
+        const personal = stepData["personal-details"] ?? {};
+        const experience = stepData["experience-and-education"] ?? {};
+        recordProfile({
+            phone: personal.phone ? `${phoneCodeFor(personal.phoneCode).code} ${personal.phone}` : "",
+            location: [personal.city, personal.state, personal.country].filter(Boolean).join(", "),
+            jobTitle: experience.jobTitle ?? "",
+            employer: experience.employer ?? "",
+        });
         setTimeout(() => {
             setSubmitted(true);
             window.scrollTo({ top: 0, behavior: "smooth" });

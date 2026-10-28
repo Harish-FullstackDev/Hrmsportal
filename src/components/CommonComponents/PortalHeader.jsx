@@ -12,12 +12,12 @@ import ascendusLogo from "@/assets/CommonComponents/ascendus-logo-primary.svg";
 const LINKS = [
     { label: "Search Jobs", href: "/jobs" },
     { label: "Saved Jobs", href: "/saved-jobs", signedInOnly: true },
-    { label: "My Application", href: "/my-applications" },
+    { label: "My Profile", href: "/my-profile" },
 ];
 
 // Figma 1306:2571: top bar of the careers-portal screens. Links and logo sit
 // 64 in from the screen edges at every desktop width; the border runs edge
-// to edge. Signed-in pages (Figma 1380:2918) add "My Profile" first.
+// to edge. Signed-in pages (`showProfileLink`) also show Saved Jobs.
 export default function PortalHeader({ showProfileLink = false }) {
     const pathname = usePathname() ?? "";
     const current = LINKS.find(({ href }) => pathname === href || pathname.startsWith(`${href}/`))?.href;
@@ -26,12 +26,6 @@ export default function PortalHeader({ showProfileLink = false }) {
         <header className="relative w-full border-b border-primary-200">
             <div className="flex w-full items-center justify-between gap-4 px-4 pt-6 pb-4 sm:px-16 lg:pt-8 lg:pb-6">
                 <nav className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm whitespace-nowrap leading-[1.5] capitalize sm:gap-x-8 sm:text-base">
-                    {showProfileLink && (
-                        // TODO: point at the profile page once it exists.
-                        <Link href="#" className="hover:text-action">
-                            My Profile
-                        </Link>
-                    )}
                     {LINKS.filter((link) => showProfileLink || !link.signedInOnly).map(({ label, href }) => (
                         <Link
                             key={href}

@@ -6,7 +6,7 @@ import { safeNext, withNext } from "@/lib/nextPath";
 // Pages that need a signed-in user. /reset-password needs the session the
 // recovery code creates; /reset-password/success does not (the password
 // update signs the user out).
-const PROTECTED = ["/dashboard", "/apply", "/job-details", "/jobs", "/saved-jobs", "/my-applications"];
+const PROTECTED = ["/dashboard", "/apply", "/job-details", "/jobs", "/saved-jobs", "/my-applications", "/my-profile"];
 const PROTECTED_EXACT = ["/reset-password", "/email-verified"];
 
 // Sign-in and sign-up: a signed-in user goes straight to the dashboard.

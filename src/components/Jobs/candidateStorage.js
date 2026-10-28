@@ -89,6 +89,37 @@ export function recordApplication({ id, position, resumeName, portfolio }) {
     writeList(APPLICATIONS_KEY, [entry, ...readList(APPLICATIONS_KEY)]);
 }
 
+// Contact details from the candidate's latest submitted application, shown on
+// My Profile: { phone, location, jobTitle, employer }. The account itself
+// only holds the name and email.
+const PROFILE_KEY = "hrms-profile";
+
+export function useProfile() {
+    const raw = useSyncExternalStore(
+        subscribe,
+        () => readRaw(PROFILE_KEY),
+        () => null,
+    );
+    return useMemo(() => {
+        if (raw === null) return null;
+        try {
+            const profile = JSON.parse(raw);
+            return profile && typeof profile === "object" && !Array.isArray(profile) ? profile : {};
+        } catch {
+            return {};
+        }
+    }, [raw]);
+}
+
+export function recordProfile(profile) {
+    try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+        // Storage blocked: nothing to keep the change in.
+    }
+    listeners.forEach((listener) => listener());
+}
+
 // Withdrawing only marks the entry, so it moves to the Inactive tab.
 export function withdrawApplication(key) {
     const list = readList(APPLICATIONS_KEY).map((application) =>
