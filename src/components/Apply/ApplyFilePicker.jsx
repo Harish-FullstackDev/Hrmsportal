@@ -69,7 +69,7 @@ export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onP
                         {fileName || `Choose ${typeList(types)} (Max 5 MB)`}
                     </span>
                 </span>
-                <span className="shrink-0 text-action">BROWSE</span>
+                <span className="shrink-0 text-[10px] text-action">BROWSE</span>
             </button>
         </>
     );
@@ -77,10 +77,15 @@ export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onP
 
 export const openFilePicker = (id) => document.getElementById(id)?.click();
 
-// Figma 1878:21533: an attached file's name on a small grey chip.
-export function FileChip({ name }) {
+// Figma 1878:21533: an attached file's name on a small grey chip. `roomy`
+// is the taller chip of the documents stage (Figma 1919:5265, 12/8 padding).
+export function FileChip({ name, roomy = false }) {
     return (
-        <span className="inline-flex max-w-full items-center gap-2 rounded bg-[#f8f9fa] px-2.5 py-1 text-sm leading-[1.4] text-ink-secondary">
+        <span
+            className={`inline-flex max-w-full items-center gap-2 rounded bg-[#f8f9fa] text-sm leading-[1.4] text-ink-secondary ${
+                roomy ? "px-3 py-2" : "px-2.5 py-1"
+            }`}
+        >
             <Image src={fileIcon} alt="" width={16} height={16} className="shrink-0" />
             <span className="truncate">{name}</span>
         </span>

@@ -7,10 +7,10 @@ import { applySteps } from "@/components/Apply/applySteps";
 
 // Figma 1878:19594: a 100-tall light-blue panel (12 radius, 32/16 padding)
 // with the six stages in equal columns, each a 32px white circle over its
-// 12px label, 16 apart. A 3px light rail joins the circles; the blue part
+// 14px label, 16 apart. A 3px light rail joins the circles; the blue part
 // runs up to the current stage and slides along when it changes. The current
 // stage's circle has a blue ring; stages before it turn blue with a check
-// and a blue label. Below lg the labels would collide, so only the current
+// and a blue label. Below xl the labels would collide, so only the current
 // stage's name is shown under the circles.
 //
 // Stages up to `maxVisited` (other than the current one) are buttons that
@@ -79,7 +79,7 @@ export default function ApplicationStepper({ currentIndex, maxVisited = currentI
                                         />
                                     </span>
                                     <span
-                                        className={`hidden text-center text-xs leading-[1.4] whitespace-nowrap transition-colors duration-300 lg:block ${
+                                        className={`hidden text-center text-sm leading-[1.4] whitespace-nowrap transition-colors duration-300 xl:block ${
                                             done ? "text-action" : "text-ink"
                                         }`}
                                     >
@@ -92,7 +92,7 @@ export default function ApplicationStepper({ currentIndex, maxVisited = currentI
                     })}
                 </ol>
             </div>
-            <p className="mt-3 text-sm leading-5 text-ink lg:hidden">
+            <p className="mt-3 text-sm leading-5 text-ink xl:hidden">
                 {currentIndex >= count
                     ? "All steps completed"
                     : `Step ${currentIndex + 1} of ${count}: ${applySteps[currentIndex].label}`}
