@@ -18,10 +18,12 @@ import chevronLight from "@/assets/Apply/icons/chevron-down-light-16.svg";
 // controls: autofill extensions add attributes before React hydrates.
 
 // Figma 1878:19631: empty fields are grey (#f8f9fa) with a light placeholder;
-// filled ones turn light blue.
+// filled ones turn light blue. On a grey panel (`onSubtle`, Figma 1947:13334)
+// empty fields are white instead.
 const boxClass = "h-[42px] w-full rounded-lg border text-sm leading-5 transition-colors outline-none";
 const borderClass = (invalid) => (invalid ? "border-required" : "border-border-default");
-const fillClass = (value) => (value ? "bg-surface-brand-subtle" : "bg-[#f8f9fa]");
+export const fillClass = (value, onSubtle = false) =>
+    value ? "bg-surface-brand-subtle" : onSubtle ? "bg-white" : "bg-[#f8f9fa]";
 
 export const messageIdFor = (id, { hint, error } = {}) => (hint || error ? `${id}-message` : undefined);
 
@@ -44,13 +46,13 @@ export function ApplyField({ id, label, required = false, hint, error, className
     );
 }
 
-export function ApplyTextInput({ invalid, describedBy, ...props }) {
+export function ApplyTextInput({ invalid, describedBy, onSubtle, ...props }) {
     return (
         <input
             suppressHydrationWarning
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
-            className={`${boxClass} ${borderClass(invalid)} ${fillClass(props.value)} px-[13px] text-ink placeholder:text-ink-disabled focus:border-action`}
+            className={`${boxClass} ${borderClass(invalid)} ${fillClass(props.value, onSubtle)} px-[13px] text-ink placeholder:text-ink-disabled focus:border-action`}
             {...props}
         />
     );
@@ -75,6 +77,7 @@ export function ApplySelect({
     onChange,
     disabled = false,
     icon = chevronDown,
+    onSubtle = false,
     "aria-label": ariaLabel,
 }) {
     const [open, setOpen] = useState(false);
@@ -167,7 +170,7 @@ export function ApplySelect({
                 onKeyDown={onKeyDown}
                 className={`flex h-[42px] w-full items-center rounded-lg border pr-10 pl-[13px] text-left text-sm leading-5 transition-colors outline-none ${
                     open ? "border-action" : `${borderClass(invalid)} focus:border-action`
-                } ${disabled ? "cursor-not-allowed bg-neutral-100" : `cursor-pointer ${fillClass(value)}`} ${
+                } ${disabled ? "cursor-not-allowed bg-neutral-100" : `cursor-pointer ${fillClass(value, onSubtle)}`} ${
                     value ? "text-ink" : "text-ink-disabled"
                 }`}
             >

@@ -60,14 +60,17 @@ function validateRole(role) {
 export const roleDates = (role) =>
     `${role.startMonth} ${role.startYear} - ${role.current === "Yes" ? "Present" : `${role.endMonth} ${role.endYear}`}`;
 
-// Figma 1878:20439: one saved role on a grey bar, with Edit / Delete.
+// Figma 1947:12370: one saved role on a white bar (24 / 8 padding, columns of
+// 256 / 256 / 200 / 240 spread across), with Edit / Delete.
 function RoleRow({ role, onEdit, onDelete }) {
     return (
-        <li className="grid items-center gap-x-6 gap-y-2 rounded-xl bg-[#f8f9fa] p-6 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[1.4fr_1fr_1fr_1.2fr_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+        <li className="grid items-center gap-x-6 gap-y-2 rounded-xl bg-white px-6 py-2 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[minmax(0,256fr)_minmax(0,256fr)_minmax(0,200fr)_minmax(0,240fr)_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
             <span className="flex min-w-0 items-center gap-2">
-                <span aria-hidden="true" className="h-[22px] w-[3px] shrink-0 rounded-[2px] bg-[#d9d9d9]" />
-                <Image src={workHistoryIcon} alt="" width={19.56} height={20.78} className="shrink-0" />
-                <span className="truncate text-lg leading-[1.2] font-medium text-ink">{role.jobTitle}</span>
+                <span aria-hidden="true" className="h-[18px] w-[3px] shrink-0 rounded-[2px] bg-[#d9d9d9]" />
+                <span className="flex size-[18px] shrink-0 items-end justify-center">
+                    <Image src={workHistoryIcon} alt="" width={16} height={17} />
+                </span>
+                <span className="truncate text-base leading-[1.2] font-medium text-ink">{role.jobTitle}</span>
             </span>
             <span className="truncate">{role.organization}</span>
             <span className="truncate">{role.location}</span>
@@ -84,8 +87,8 @@ function RoleRow({ role, onEdit, onDelete }) {
     );
 }
 
-// Figma 1878:20729: the role form on a grey panel. End month/year hide while
-// Current Employment is Yes.
+// Figma 1947:12263: the role form on a grey panel, white fields. End
+// month/year hide while Current Employment is Yes.
 function RoleEditor({ initial, onSave, onCancel }) {
     const [role, setRole] = useState(initial);
     const [errors, setErrors] = useState({});
@@ -100,6 +103,7 @@ function RoleEditor({ initial, onSave, onCancel }) {
         value: role[field],
         invalid: Boolean(errors[field]),
         describedBy: messageIdFor(`role-${field}`, { error: errors[field] }),
+        onSubtle: true,
     });
     const text = (field, label, placeholder) => (
         <ApplyField id={`role-${field}`} label={label} required error={errors[field]}>
@@ -157,14 +161,14 @@ function RoleEditor({ initial, onSave, onCancel }) {
             </div>
             <div className="flex items-center justify-end gap-4">
                 {onCancel && (
-                    <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-3 text-xs leading-[1.4] text-ink-secondary hover:text-ink">
+                    <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-3 text-sm leading-[1.4] text-ink-secondary hover:text-ink">
                         Cancel
                     </button>
                 )}
                 <button
                     type="button"
                     onClick={save}
-                    className="cursor-pointer rounded-lg bg-action px-6 py-3 text-xs leading-[1.4] text-white transition-colors hover:bg-[#005192]"
+                    className="cursor-pointer rounded-lg bg-action px-6 py-3 text-sm leading-[1.4] text-white transition-colors hover:bg-[#005192]"
                 >
                     {initial === emptyRole ? "Add Experience" : "Save Experience"}
                 </button>
@@ -173,56 +177,50 @@ function RoleEditor({ initial, onSave, onCancel }) {
     );
 }
 
-// Figma 1878:20438 / 1878:20729: the candidate's roles. With none saved the
-// role form is open; saved roles list as rows with Edit / Delete, and "Add
-// Another Role" opens the form again. `value` is the list of roles.
+// Figma 1947:12254: the candidate's roles. Saved roles list as white rows
+// with Edit / Delete on a grey panel, then a divider and the role form,
+// which stays open for the next role (as for certifications). `value` is the
+// list of roles.
 export default function WorkHistory({ value, error, onChange }) {
-    // null (form closed), "new", or the index of the role being edited.
+    // null (adding a new one) or the index of the role being edited.
     const [editing, setEditing] = useState(null);
     const roles = value ?? [];
-    const formOpen = roles.length === 0 || editing !== null;
 
     const save = (role) => {
-        onChange(editing === null || editing === "new" ? [...roles, role] : roles.map((item, i) => (i === editing ? role : item)));
+        onChange(editing === null ? [...roles, role] : roles.map((item, i) => (i === editing ? role : item)));
         setEditing(null);
     };
 
     return (
         <div className="flex flex-col gap-8">
-            {roles.length > 0 && (
-                <ul aria-label="Work experience" className="flex flex-col gap-4">
-                    {roles.map((role, index) =>
-                        editing === index ? null : (
-                            <RoleRow
-                                key={`${role.jobTitle}-${role.organization}-${index}`}
-                                role={role}
-                                onEdit={() => setEditing(index)}
-                                onDelete={() => {
-                                    onChange(roles.filter((_, i) => i !== index));
-                                    setEditing(null);
-                                }}
-                            />
-                        ),
-                    )}
-                </ul>
+            {/* Hidden while the only saved role is open in the form. */}
+            {roles.some((_, index) => index !== editing) && (
+                <>
+                    <ul aria-label="Work experience" className="flex flex-col gap-6 rounded-xl bg-[#f8f9fa] p-6">
+                        {roles.map((role, index) =>
+                            editing === index ? null : (
+                                <RoleRow
+                                    key={`${role.jobTitle}-${role.organization}-${index}`}
+                                    role={role}
+                                    onEdit={() => setEditing(index)}
+                                    onDelete={() => {
+                                        onChange(roles.filter((_, i) => i !== index));
+                                        setEditing(null);
+                                    }}
+                                />
+                            ),
+                        )}
+                    </ul>
+                    <hr className="border-border-default" />
+                </>
             )}
 
-            {formOpen ? (
-                <RoleEditor
-                    key={editing ?? "first"}
-                    initial={typeof editing === "number" ? roles[editing] : emptyRole}
-                    onSave={save}
-                    onCancel={roles.length > 0 ? () => setEditing(null) : null}
-                />
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => setEditing("new")}
-                    className="cursor-pointer self-end rounded-lg bg-action px-6 py-3 text-xs leading-[1.4] text-white transition-colors hover:bg-[#005192]"
-                >
-                    Add Another Role
-                </button>
-            )}
+            <RoleEditor
+                key={editing ?? `new-${roles.length}`}
+                initial={editing === null ? emptyRole : roles[editing]}
+                onSave={save}
+                onCancel={editing === null ? null : () => setEditing(null)}
+            />
 
             {error && (
                 <p id="workHistory-message" role="alert" className="text-xs leading-[1.4] text-required">

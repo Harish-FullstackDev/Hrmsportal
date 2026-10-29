@@ -6,12 +6,12 @@ import Link from "next/link";
 import { applicationKey, useApplications, withdrawApplication } from "./candidateStorage";
 
 // Hiring pipeline, in order. An application's status is the stage it is at;
-// any status outside this list ends the application and moves it to Inactive.
+// any status outside this list ends the application and moves it to Withdrawn.
 const STAGES = ["Application Received", "Recruiter Screen", "Technical Portfolio Review", "Executive Panel", "Offer"];
 
 const TABS = [
     { key: "active", label: "Active" },
-    { key: "inactive", label: "Inactive" },
+    { key: "withdrawn", label: "Withdrawn" },
 ];
 
 const isActive = (application) => STAGES.includes(application.status);
@@ -245,7 +245,7 @@ function ApplicationCard({ application, job, onWithdraw }) {
     );
 }
 
-// Ref "active.png": Active / Inactive tabs on a white bar under the header,
+// Ref "active.png": Active / Withdrawn tabs on a white bar under the header,
 // then one full-width card per application. `jobs` is every open job, loaded
 // on the server; an application only records the position title, so its
 // location and department come from the open job of that title.
@@ -301,7 +301,7 @@ export default function MyApplications({ jobs, embedded = false }) {
                 ) : visible.length === 0 ? (
                     <div className="flex flex-col items-start gap-4 py-6">
                         <p className="text-base leading-[1.5] text-ink-secondary">
-                            {tab === "active" ? "You have no active applications." : "You have no inactive applications."}
+                            {tab === "active" ? "You have no active applications." : "You have no withdrawn applications."}
                         </p>
                         {tab === "active" && (
                             <Link

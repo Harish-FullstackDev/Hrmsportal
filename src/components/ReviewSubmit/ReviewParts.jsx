@@ -29,23 +29,38 @@ export function ReviewCard({ title, editHref, children, className = "" }) {
     );
 }
 
-// Four columns, 32 apart (two on tablets, one on phones).
-export function ReviewGrid({ children }) {
-    return <dl className="grid w-full gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-4">{children}</dl>;
+// Four columns (or `columns={5}`), 32 apart (two on tablets, one on phones).
+export function ReviewGrid({ columns = 4, children }) {
+    return (
+        <dl className={`grid w-full gap-x-8 gap-y-6 md:grid-cols-2 ${columns === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+            {children}
+        </dl>
+    );
 }
 
 const isEmpty = (value) => value == null || value === "" || (Array.isArray(value) && value.length === 0);
 
-// Figma 1878:21991: 12px term over the 14px answer, 2 apart. A list answer
-// shows one per line; a missing one "Not provided".
-export function ReviewField({ label, value, className = "" }) {
+// Figma 1878:21991: the term over the 14px answer, 2 apart. A list answer
+// shows one per line, or with `tags` one grey tag per line, 6 apart (Figma
+// 1947:14129); a missing one "Not provided".
+export function ReviewField({ label, value, tags = false, className = "" }) {
     return (
-        <div className={`flex min-w-0 flex-col gap-0.5 ${className}`}>
+        <div className={`flex min-w-0 flex-col ${tags ? "gap-1.5" : "gap-0.5"} ${className}`}>
             <dt className="text-sm leading-[1.4] text-ink-secondary">{label}</dt>
             <dd className={`text-sm leading-[1.4] break-words ${isEmpty(value) ? "text-hint" : "text-ink"}`}>
                 {isEmpty(value)
                     ? "Not provided"
-                    : Array.isArray(value)
+                    : tags && Array.isArray(value)
+                      ? (
+                            <ul className="flex flex-col items-start gap-1.5">
+                                {value.map((item, index) => (
+                                    <li key={index} className="max-w-full rounded bg-[#f8f9fa] px-3 py-1.5">
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        )
+                      : Array.isArray(value)
                       ? value.map((item, index) => (
                             <span key={index} className="block">
                                 {item}
@@ -58,20 +73,27 @@ export function ReviewField({ label, value, className = "" }) {
 }
 
 // Figma 1878:22121: answers as small grey tags (skills, certifications).
-export function ReviewTags({ label, items, className = "" }) {
+// `as="dl-item"` renders the label and tags as <dt> / <dd> for use inside a
+// <dl>; `stacked` puts one tag per line.
+export function ReviewTags({ label, items, as, stacked = false, className = "" }) {
+    const inList = as === "dl-item";
+    const Term = inList ? "dt" : "p";
+    const Details = inList ? "dd" : "div";
     return (
         <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
-            <p className="text-sm leading-[1.4] text-ink-secondary">{label}</p>
+            <Term className="text-sm leading-[1.4] text-ink-secondary">{label}</Term>
             {items.length === 0 ? (
-                <p className="text-sm leading-[1.4] text-hint">Not provided</p>
+                <Details className="text-sm leading-[1.4] text-hint">Not provided</Details>
             ) : (
-                <ul className="flex flex-wrap gap-1.5">
-                    {items.map((item, index) => (
-                        <li key={index} className="rounded bg-[#f8f9fa] px-3 py-1.5 text-sm leading-[1.4] text-ink">
-                            {item}
-                        </li>
-                    ))}
-                </ul>
+                <Details>
+                    <ul className={stacked ? "flex flex-col items-start gap-1.5" : "flex flex-wrap gap-1.5"}>
+                        {items.map((item, index) => (
+                            <li key={index} className="max-w-full rounded bg-[#f8f9fa] px-3 py-1.5 text-sm leading-[1.4] text-ink">
+                                {item}
+                            </li>
+                        ))}
+                    </ul>
+                </Details>
             )}
         </div>
     );

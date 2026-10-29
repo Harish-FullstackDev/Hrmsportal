@@ -122,7 +122,7 @@ export function recordProfile(profile) {
     listeners.forEach((listener) => listener());
 }
 
-// Withdrawing only marks the entry, so it moves to the Inactive tab.
+// Withdrawing only marks the entry, so it moves to the Withdrawn tab.
 export function withdrawApplication(key) {
     const list = readList(APPLICATIONS_KEY).map((application) =>
         applicationKey(application) === key ? { ...application, status: "Withdrawn" } : application,

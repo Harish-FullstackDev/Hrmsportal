@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 
-import closeIcon from "@/assets/Apply/icons/close-16.svg";
+import chevronSecondary from "@/assets/Apply/icons/chevron-down-secondary-16.svg";
 import { ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
-import { ApplySelect, ApplyTextInput } from "@/components/Apply/ApplyFormControls";
 import { skills as skillOptions } from "@/components/ExperienceEducation/experienceOptions";
 import Certifications from "@/components/SkillsCertifications/Certifications";
 
@@ -44,9 +43,11 @@ export function validateSkillsCertifications(values) {
     return errors;
 }
 
-// Figma 1878:21590, extended to several links: each row picks the kind of
-// link and takes its URL (the field 417 wide, as in Figma); rows can be added
-// up to MAX_LINKS and removed. Optional.
+// Figma 1947:13141: work links, two per row 32 apart. Each is one grey field
+// with the link type in a darker cell on the left (a native select laid
+// invisibly over it, like the phone code) and the URL beside it, 24 apart;
+// then Add (on the last link only, up to MAX_LINKS) and Delete (while there
+// is more than one). Optional.
 function WorkLinks({ links, errors, onChange }) {
     const update = (index, field, value) =>
         onChange(
@@ -55,67 +56,89 @@ function WorkLinks({ links, errors, onChange }) {
         );
 
     return (
-        <section aria-labelledby="work-links-label" className="flex flex-col gap-3 rounded-xl bg-white p-6">
+        <section aria-labelledby="work-links-label" className="flex flex-col gap-6 rounded-xl bg-white p-6">
             <label id="work-links-label" htmlFor={linkId(0)} className="text-base leading-[1.2] font-medium text-[#374151]">
-                Portfolio, GitHub or Other Work links
+                Portfolio, GitHub or Other Work link
             </label>
-            <ul className="flex flex-col gap-3">
-                {links.map((link, index) => (
-                    <li key={index} className="flex flex-col gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
-                        <div className="flex items-center gap-3">
-                            <div className="w-[150px] shrink-0">
-                                <ApplySelect
-                                    id={`${linkId(index)}-type`}
-                                    name={`${linkId(index)}-type`}
-                                    aria-label="Link type"
-                                    value={link.type}
-                                    onChange={(event) => update(index, "type", event.target.value)}
-                                    options={LINK_TYPES}
-                                    placeholder="Link type"
-                                />
-                            </div>
-                            <div className="min-w-0 flex-1 lg:max-w-[417px] lg:flex-none lg:basis-[417px]">
-                                <ApplyTextInput
-                                    id={linkId(index)}
-                                    name={linkId(index)}
-                                    type="url"
-                                    autoComplete="url"
-                                    aria-label={`${link.type} link`}
-                                    value={link.url}
-                                    onChange={(event) => update(index, "url", event.target.value)}
-                                    placeholder="Enter your link"
-                                    invalid={Boolean(errors[linkId(index)])}
-                                    describedBy={errors[linkId(index)] ? `${linkId(index)}-message` : undefined}
-                                />
-                            </div>
-                            {links.length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => onChange(links.filter((_, i) => i !== index), index)}
-                                    aria-label={`Remove ${link.type} link`}
-                                    className="flex size-[42px] shrink-0 cursor-pointer items-center justify-center rounded-lg bg-[#f8f9fa] transition-colors hover:bg-surface-brand-subtle"
+            <ul className="flex flex-wrap gap-x-8 gap-y-4">
+                {links.map((link, index) => {
+                    const error = errors[linkId(index)];
+                    const last = index === links.length - 1;
+                    return (
+                        <li
+                            key={index}
+                            className="flex w-full flex-col gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_both] lg:w-[calc(50%-16px)]"
+                        >
+                            <div className="flex items-center gap-6">
+                                <div
+                                    className={`flex h-[42px] min-w-0 flex-1 items-center gap-6 overflow-hidden rounded-lg border bg-[#f8f9fa] p-px transition-colors focus-within:border-action ${
+                                        error ? "border-required" : "border-border-default"
+                                    }`}
                                 >
-                                    <Image src={closeIcon} alt="" width={16} height={16} />
-                                </button>
+                                    <span className="relative flex h-full shrink-0 items-center gap-1 rounded-lg bg-[#e4e7eb] px-3 text-sm leading-[1.4] text-ink-secondary">
+                                        {link.type}
+                                        <Image src={chevronSecondary} alt="" width={16} height={16} />
+                                        <select
+                                            suppressHydrationWarning
+                                            aria-label="Link type"
+                                            value={link.type}
+                                            onChange={(event) => update(index, "type", event.target.value)}
+                                            className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+                                        >
+                                            {LINK_TYPES.map((type) => (
+                                                <option key={type} value={type}>
+                                                    {type}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </span>
+                                    <input
+                                        suppressHydrationWarning
+                                        id={linkId(index)}
+                                        name={linkId(index)}
+                                        type="url"
+                                        autoComplete="url"
+                                        aria-label={`${link.type} link`}
+                                        aria-invalid={Boolean(error) || undefined}
+                                        aria-describedby={error ? `${linkId(index)}-message` : undefined}
+                                        value={link.url}
+                                        onChange={(event) => update(index, "url", event.target.value)}
+                                        placeholder="Enter your link"
+                                        className="h-full min-w-0 flex-1 bg-transparent pr-3 text-sm leading-5 text-ink outline-none placeholder:text-ink-disabled"
+                                    />
+                                </div>
+                                {(last && links.length < MAX_LINKS) || links.length > 1 ? (
+                                    <span className="flex shrink-0 items-center gap-2 text-sm leading-[1.4]">
+                                        {last && links.length < MAX_LINKS && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onChange([...links, emptyLink()], links.length)}
+                                                className="cursor-pointer px-3 py-2 text-muted-ink underline hover:text-ink"
+                                            >
+                                                Add<span className="sr-only"> another link</span>
+                                            </button>
+                                        )}
+                                        {links.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onChange(links.filter((_, i) => i !== index), index)}
+                                                className="cursor-pointer px-3 py-2 text-[#b43838] underline hover:text-required"
+                                            >
+                                                Delete<span className="sr-only"> {link.type} link</span>
+                                            </button>
+                                        )}
+                                    </span>
+                                ) : null}
+                            </div>
+                            {error && (
+                                <p id={`${linkId(index)}-message`} className="text-xs leading-[1.4] text-required">
+                                    {error}
+                                </p>
                             )}
-                        </div>
-                        {errors[linkId(index)] && (
-                            <p id={`${linkId(index)}-message`} className="text-xs leading-[1.4] text-required">
-                                {errors[linkId(index)]}
-                            </p>
-                        )}
-                    </li>
-                ))}
+                        </li>
+                    );
+                })}
             </ul>
-            {links.length < MAX_LINKS && (
-                <button
-                    type="button"
-                    onClick={() => onChange([...links, emptyLink()], links.length)}
-                    className="w-fit cursor-pointer rounded-lg bg-surface-brand-subtle px-4 py-2 text-xs leading-[1.4] text-action transition-colors hover:bg-primary-200/50"
-                >
-                    + Add another link
-                </button>
-            )}
         </section>
     );
 }

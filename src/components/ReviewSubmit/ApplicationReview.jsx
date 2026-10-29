@@ -127,36 +127,50 @@ export default function ApplicationReview({ resume, resumeUrl, data }) {
     return (
         <div className="flex w-full flex-col gap-8">
             <ReviewCard title="Personal Details" editHref={applyStepHref(1)}>
-                <ReviewGrid>
+                {/* Figma 1947:13765: five columns; the optional middle name and
+                    LinkedIn show only when given. */}
+                <ReviewGrid columns={5}>
                     <ReviewField label="First Name" value={personal.firstName} />
-                    <ReviewField label="Middle Name" value={personal.middleName} />
+                    {personal.middleName && <ReviewField label="Middle Name" value={personal.middleName} />}
                     <ReviewField label="Last Name" value={personal.lastName} />
                     <ReviewField label="Email" value={personal.email} />
                     <ReviewField label="Mobile Number" value={phone(personal.phoneCode, personal.phone)} />
+                    <ReviewField label="Alternate Mobile Number" value={phone(personal.altPhoneCode, personal.altPhone)} />
                     <ReviewField label="Gender" value={personal.gender} />
                     <ReviewField label="PAN No." value={personal.pan} />
                     <ReviewField label="Country" value={personal.country} />
                     <ReviewField label="State" value={personal.state} />
                     <ReviewField label="City" value={personal.city} />
+                    {personal.linkedIn && <ReviewField label="LinkedIn Profile URL" value={personal.linkedIn} />}
                     <ReviewField
                         label="Languages"
-                        value={(personal.languages ?? []).map(({ language, fluency }) => `${language} (${fluency})`).join(", ")}
+                        className="md:col-span-2"
+                        value={
+                            personal.languages?.length ? (
+                                <span className="flex flex-wrap gap-x-3">
+                                    {personal.languages.map(({ language, fluency }) => (
+                                        <span key={language}>
+                                            {language} | {fluency}
+                                        </span>
+                                    ))}
+                                </span>
+                            ) : (
+                                ""
+                            )
+                        }
                     />
-                    {personal.altPhone && (
-                        <ReviewField label="Alternate Mobile Number" value={phone(personal.altPhoneCode, personal.altPhone)} />
-                    )}
-                    {personal.linkedIn && <ReviewField label="LinkedIn Profile URL" value={personal.linkedIn} />}
                 </ReviewGrid>
             </ReviewCard>
 
             <ReviewCard title="Experience and Education" editHref={applyStepHref(2)}>
-                <ReviewGrid>
+                <ReviewGrid columns={5}>
                     {experienceSummary(experience).map(({ field, label, value }) => (
                         <ReviewField
                             key={field}
                             label={label}
                             value={field === "realWorldWork" && Array.isArray(value) ? value.join(", ") : value}
-                            className={field === "workHistory" ? "md:col-span-2" : ""}
+                            tags={field === "workHistory"}
+                            className={field === "workHistory" ? "md:col-span-2 lg:col-span-3" : ""}
                         />
                     ))}
                 </ReviewGrid>
@@ -171,10 +185,20 @@ export default function ApplicationReview({ resume, resumeUrl, data }) {
                         </>
                     ))}
                 />
-                <ReviewTags label="Skills" items={skills.skills ?? []} />
-                {links.length > 0 && (
-                    <ReviewTags label="Portfolio, GitHub or Other Work links" items={links.map((link) => `${link.type}: ${link.url.trim()}`)} />
-                )}
+                {/* Figma 1947:13893: skills over three of five columns, then
+                    each work link under its own type: the first two beside
+                    the skills, the rest five to a row below. */}
+                <dl className="grid w-full gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-5">
+                    <ReviewTags as="dl-item" label="Skills" items={skills.skills ?? []} className="md:col-span-2 lg:col-span-3" />
+                    {links.map((link, index) => (
+                        <ReviewField
+                            key={`${link.type}-${index}`}
+                            label={link.type}
+                            value={link.url.trim()}
+                            className="self-start"
+                        />
+                    ))}
+                </dl>
             </ReviewCard>
 
             <ReviewCard title="Upload Documents" editHref={applyStepHref(4)}>

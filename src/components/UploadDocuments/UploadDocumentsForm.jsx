@@ -7,8 +7,8 @@ import { saveDocumentFile } from "@/components/Apply/applicationStorage";
 const IMAGES = ["png", "jpg"];
 const DOCUMENTS = ["pdf", "png", "jpg"];
 
-// The documents asked for, in Figma's order. Additional certificates are
-// optional and may be several files.
+// The documents asked for, in Figma's order. A `multiple` entry is optional
+// and may hold several files.
 export const DOCUMENTS_LIST = [
     { field: "photograph", label: "Photograph", types: IMAGES },
     { field: "signature", label: "Signature", types: IMAGES },
@@ -16,7 +16,6 @@ export const DOCUMENTS_LIST = [
     { field: "tenthMarksheet", label: "10th Marksheet", types: DOCUMENTS },
     { field: "twelfthMarksheet", label: "12th Marksheet / Diploma Certificate", types: DOCUMENTS },
     { field: "degreeCertificate", label: "Degree Certificate", types: DOCUMENTS },
-    { field: "additionalCertificates", label: "Additional Certificates If Any", types: DOCUMENTS, multiple: true },
 ];
 
 // File names; single documents' files are also kept in this browser

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import chevronYear from "@/assets/Apply/icons/chevron-down-light-24.svg";
 import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
@@ -63,7 +63,7 @@ export const emptyExperienceEducation = {
 
 // Labels of the experienced candidates' fields, shared with the review stage.
 export const experiencedLabels = {
-    workHistory: "Work Experience",
+    workHistory: "Experiences",
     servingNotice: "Currently Serving Notice Period?",
     noticePeriod: "Notice Period",
     canShorten: "Can Your Notice Period be Shortened?",
@@ -72,8 +72,6 @@ export const experiencedLabels = {
 };
 
 export const formatLpa = (value) => (value ? `${value} LPA` : "");
-
-const hasCurrentRole = (values) => (values.workHistory ?? []).some((role) => role.current === "Yes");
 
 // Labels of the fixed fields, shared with the review stage.
 export const experienceLabels = {
@@ -115,36 +113,75 @@ export function validateExperienceEducation(values) {
             if (isEmpty(values.noticePeriod)) errors.noticePeriod = "Select your notice period.";
             if (isEmpty(values.canShorten)) errors.canShorten = "Select an option.";
         }
-        if (hasCurrentRole(values) && isEmpty(values.currentSalary)) {
-            errors.currentSalary = "Enter your current annual salary.";
-        }
         if (isEmpty(values.expectedSalary)) errors.expectedSalary = "Enter your expected annual salary.";
     }
     return errors;
 }
 
+// Shorter labels and order of the fixed fields on the review (Figma 1947:14050).
+const REVIEW_LABELS = {
+    qualification: "Qualification",
+    university: "University",
+    degree: "Degree",
+    fieldOfStudy: "Field",
+    graduationYear: "Graduation Year",
+    relevantExperience: "Total Relevant Experience",
+    relocate: "Willing to Relocate",
+};
+
 // [{ field, label, value }] of every field the chosen level asks, for the
-// review stage.
+// review stage. The work history comes last.
 export function experienceSummary(values) {
     const rows = [
-        ...Object.keys(experienceLabels).map((field) => ({ field, label: experienceLabels[field], value: values[field] })),
+        ...Object.keys(REVIEW_LABELS).map((field) => ({ field, label: REVIEW_LABELS[field], value: values[field] })),
         ...questionsFor(values.relevantExperience).map(({ field, label }) => ({ field, label, value: values[field] })),
     ];
     if (!isExperienced(values.relevantExperience)) return rows;
 
-    const shown = ["workHistory", "servingNotice", "noticePeriod", "currentSalary", "expectedSalary"];
-    if (values.servingNotice === "Yes") shown.splice(3, 0, "canShorten");
+    const shown = ["servingNotice", "noticePeriod", "currentSalary", "expectedSalary", "workHistory"];
+    if (values.servingNotice === "Yes") shown.splice(2, 0, "canShorten");
+    // As on the form: the notice period is optional unless serving notice.
+    const labels = {
+        ...experiencedLabels,
+        noticePeriod: values.servingNotice === "Yes" ? "Notice Period" : "If Notice Period Applicable",
+    };
     const display = {
         workHistory: (values.workHistory ?? []).map(
-            (role) => `${role.jobTitle}, ${role.organization}, ${role.location} (${roleDates(role)})`,
+            (role) => `${role.jobTitle} | ${role.organization} | ${role.location} | ${roleDates(role)}`,
         ),
         currentSalary: formatLpa(values.currentSalary),
         expectedSalary: formatLpa(values.expectedSalary),
     };
     return [
         ...rows,
-        ...shown.map((field) => ({ field, label: experiencedLabels[field], value: display[field] ?? values[field] })),
+        ...shown.map((field) => ({ field, label: labels[field], value: display[field] ?? values[field] })),
     ];
+}
+
+// Opens and closes smoothly: the height eases between 0 and the content's
+// (grid rows 0fr / 1fr) while the content fades and slides down into place,
+// and the parent grid's 24 gap above it is taken back while closed. Closed
+// content stays mounted but inert. The content is clipped while moving and
+// unclipped once open, so dropdown lists inside can spill out.
+function Reveal({ open, className = "", children }) {
+    const [settled, setSettled] = useState(open);
+    if (!open && settled) setSettled(false);
+
+    return (
+        <div
+            inert={!open}
+            onTransitionEnd={(event) => {
+                if (event.target === event.currentTarget && event.propertyName === "grid-template-rows" && open) setSettled(true);
+            }}
+            className={`grid transition-[grid-template-rows,opacity,translate,margin] duration-500 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none ${
+                open ? "grid-rows-[1fr] translate-y-0 opacity-100" : "-mt-6 grid-rows-[0fr] -translate-y-2 opacity-0"
+            } ${className}`}
+        >
+            <div className={`min-h-0 ${settled ? "overflow-visible" : `overflow-hidden ${open ? "motion-reduce:overflow-visible" : ""}`}`}>
+                {children}
+            </div>
+        </div>
+    );
 }
 
 function SectionHeading({ id, children }) {
@@ -188,7 +225,6 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
         />
     );
 
-    const levelQuestions = questionsFor(values.relevantExperience);
     const experienced = isExperienced(values.relevantExperience);
     const salary = (field, required) => (
         <div
@@ -270,37 +306,33 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                 <div className="grid w-full gap-x-8 gap-y-6 rounded-xl bg-white p-6 lg:grid-cols-3">
                     {choice("relevantExperience", experienceLevels, "lg:col-span-2")}
                     {choice("relocate", yesNo)}
-                    {/* Keyed by level, so a new level's questions fade in. */}
-                    <div
-                        key={values.relevantExperience}
-                        className="flex flex-col gap-6 motion-safe:animate-[apply-check-in_250ms_ease-out_both] empty:hidden lg:col-span-2"
-                    >
-                        {levelQuestions.map(({ field, label, options, multiple, exclusive }) => (
-                            <ChoiceField
-                                key={field}
-                                field={field}
-                                label={label}
-                                options={options}
-                                multiple={multiple}
-                                exclusive={exclusive}
-                                value={values[field]}
-                                error={errors[field]}
-                                onChange={(next) => setValue(field, next)}
-                            />
-                        ))}
-                    </div>
+                    {/* The fresher's questions and the experienced block both
+                        stay mounted and open or close with the level. */}
+                    <Reveal open={values.relevantExperience === "Fresher"} className="lg:col-span-2">
+                        <div className="flex flex-col gap-6">
+                            {questionsFor("Fresher").map(({ field, label, options, multiple, exclusive }) => (
+                                <ChoiceField
+                                    key={field}
+                                    field={field}
+                                    label={label}
+                                    options={options}
+                                    multiple={multiple}
+                                    exclusive={exclusive}
+                                    value={values[field]}
+                                    error={errors[field]}
+                                    onChange={(next) => setValue(field, next)}
+                                />
+                            ))}
+                        </div>
+                    </Reveal>
 
-                    {experienced && (
-                        <div
-                            key="experienced"
-                            className="flex flex-col gap-8 motion-safe:animate-[apply-check-in_250ms_ease-out_both] lg:col-span-3"
-                        >
+                    <Reveal open={experienced} className="lg:col-span-3">
+                        <div className="flex flex-col gap-8">
                             <WorkHistory
                                 value={values.workHistory}
                                 error={errors.workHistory}
                                 onChange={(next) => setValue("workHistory", next)}
                             />
-                            <hr className="border-border-default" />
                             {/* Relative: the salary slide measures against this grid. */}
                             <div className="relative grid gap-x-8 gap-y-6 lg:grid-cols-3">
                                 <ChoiceField
@@ -334,11 +366,11 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                                     />
                                 )}
                                 {/* Start on the left, or beside the shortening question when it shows. */}
-                                {salary("currentSalary", hasCurrentRole(values))}
+                                {salary("currentSalary", false)}
                                 {salary("expectedSalary", true)}
                             </div>
                         </div>
-                    )}
+                    </Reveal>
                 </div>
             </section>
         </div>

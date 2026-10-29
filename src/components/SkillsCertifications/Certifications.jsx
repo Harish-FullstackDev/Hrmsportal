@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 
-import certificateIcon from "@/assets/Apply/icons/certificate-24.svg";
+import workHistoryIcon from "@/assets/Apply/icons/work-history-22.svg";
 import { ApplyFilePicker, FileChip } from "@/components/Apply/ApplyFilePicker";
 import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
 import { months, workYears } from "@/components/ExperienceEducation/experienceOptions";
@@ -33,15 +33,18 @@ function validateCertificate(certificate) {
     return errors;
 }
 
-// Figma 1878:21525: one saved certification on a white bar: name, provider,
-// date, the attached file, and Edit / Delete.
+// Figma 1947:13309: one saved certification on a white bar (24 / 8 padding,
+// 32 between columns of 360 / 240 / 120 / 200): name, provider, date, the
+// attached file, and Edit / Delete.
 function CertificateRow({ certificate, onEdit, onDelete }) {
     return (
-        <li className="grid items-center gap-x-6 gap-y-2 rounded-xl bg-white p-6 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[2fr_1fr_1fr_1.2fr_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+        <li className="grid items-center gap-x-8 gap-y-2 rounded-xl bg-white px-6 py-2 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[minmax(0,360fr)_minmax(0,240fr)_minmax(0,120fr)_minmax(0,200fr)_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
             <span className="flex min-w-0 items-center gap-2">
-                <span aria-hidden="true" className="h-6 w-[3px] shrink-0 rounded bg-[#d9d9d9]" />
-                <Image src={certificateIcon} alt="" width={24} height={24} className="shrink-0" />
-                <span className="truncate text-lg leading-[1.2] font-medium text-ink">{certificate.name}</span>
+                <span aria-hidden="true" className="h-[18px] w-[3px] shrink-0 rounded-[2px] bg-[#d9d9d9]" />
+                <span className="flex size-[18px] shrink-0 items-end justify-center">
+                    <Image src={workHistoryIcon} alt="" width={16} height={17} />
+                </span>
+                <span className="truncate text-base leading-[1.2] font-medium text-ink">{certificate.name}</span>
             </span>
             <span className="truncate">{certificate.provider}</span>
             <span>
@@ -71,13 +74,14 @@ function CertificateFile({ fileName, error, onChange }) {
                 fileName={fileName}
                 invalid={Boolean(error)}
                 describedBy={messageIdFor("certificate-file", { error })}
+                onSubtle
                 onPick={(file, problem) => onChange(file?.name ?? null, problem)}
             />
         </ApplyField>
     );
 }
 
-// Figma 1878:21546: the certification form on a white card.
+// Figma 1947:13334: the certification form on a grey panel, white fields.
 function CertificateEditor({ initial, onSave, onCancel }) {
     const [certificate, setCertificate] = useState(initial);
     const [errors, setErrors] = useState({});
@@ -92,6 +96,7 @@ function CertificateEditor({ initial, onSave, onCancel }) {
         value: certificate[field],
         invalid: Boolean(errors[field]),
         describedBy: messageIdFor(`certificate-${field}`, { error: errors[field] }),
+        onSubtle: true,
     });
     const select = (field, options, placeholder) => (
         <ApplySelect
@@ -112,7 +117,7 @@ function CertificateEditor({ initial, onSave, onCancel }) {
     };
 
     return (
-        <div className="flex flex-col gap-4 rounded-xl bg-white p-6 motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+        <div className="flex flex-col gap-4 rounded-xl bg-[#f8f9fa] p-6 motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
             <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
                 <ApplyField id="certificate-name" label="Name of the Certification" error={errors.name}>
                     <ApplyTextInput
@@ -145,14 +150,14 @@ function CertificateEditor({ initial, onSave, onCancel }) {
             </div>
             <div className="flex items-center justify-end gap-4">
                 {onCancel && (
-                    <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-3 text-xs leading-[1.4] text-ink-secondary hover:text-ink">
+                    <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-3 text-sm leading-[1.4] text-ink-secondary hover:text-ink">
                         Cancel
                     </button>
                 )}
                 <button
                     type="button"
                     onClick={save}
-                    className="cursor-pointer rounded-lg bg-action px-6 py-3 text-xs leading-[1.4] text-white transition-colors hover:bg-[#005192]"
+                    className="cursor-pointer rounded-lg bg-action px-6 py-3 text-sm leading-[1.4] text-white transition-colors hover:bg-[#005192]"
                 >
                     {initial === emptyCertificate ? "Add Certificate" : "Save Certificate"}
                 </button>
@@ -161,9 +166,10 @@ function CertificateEditor({ initial, onSave, onCancel }) {
     );
 }
 
-// Figma 1878:21522: the "Certifications" heading, saved certifications as
-// rows with Edit / Delete, and the form to add one (always open, since
-// certifications are optional). `value` is the list.
+// Figma 1947:13305: the "Certifications" heading over a white card holding
+// the saved certifications (rows with Edit / Delete on a grey panel), a
+// divider, and the form to add one (always open, since certifications are
+// optional). `value` is the list.
 export default function Certifications({ value, onChange }) {
     // null (adding a new one) or the index of the one being edited.
     const [editing, setEditing] = useState(null);
@@ -178,32 +184,38 @@ export default function Certifications({ value, onChange }) {
 
     return (
         <section aria-labelledby="certifications-title" className="flex flex-col gap-8">
-            <h2 id="certifications-title" className="text-base leading-[1.2] font-medium text-[#0b1c30]">
+            <h2 id="certifications-title" className="text-base leading-[1.2] font-medium text-[#374151]">
                 Certifications
             </h2>
-            {certificates.length > 0 && (
-                <ul aria-label="Added certifications" className="flex flex-col gap-4">
-                    {certificates.map((certificate, index) =>
-                        editing === index ? null : (
-                            <CertificateRow
-                                key={`${certificate.name}-${index}`}
-                                certificate={certificate}
-                                onEdit={() => setEditing(index)}
-                                onDelete={() => {
-                                    onChange(certificates.filter((_, i) => i !== index));
-                                    setEditing(null);
-                                }}
-                            />
-                        ),
-                    )}
-                </ul>
-            )}
-            <CertificateEditor
-                key={editing ?? `new-${certificates.length}`}
-                initial={editing === null ? emptyCertificate : certificates[editing]}
-                onSave={save}
-                onCancel={editing === null ? null : () => setEditing(null)}
-            />
+            <div className="flex flex-col gap-8 rounded-xl bg-white p-6">
+                {/* Hidden while the only saved one is open in the form. */}
+                {certificates.some((_, index) => index !== editing) && (
+                    <>
+                        <ul aria-label="Added certifications" className="flex flex-col gap-6 rounded-xl bg-[#f8f9fa] p-6">
+                            {certificates.map((certificate, index) =>
+                                editing === index ? null : (
+                                    <CertificateRow
+                                        key={`${certificate.name}-${index}`}
+                                        certificate={certificate}
+                                        onEdit={() => setEditing(index)}
+                                        onDelete={() => {
+                                            onChange(certificates.filter((_, i) => i !== index));
+                                            setEditing(null);
+                                        }}
+                                    />
+                                ),
+                            )}
+                        </ul>
+                        <hr className="border-border-default" />
+                    </>
+                )}
+                <CertificateEditor
+                    key={editing ?? `new-${certificates.length}`}
+                    initial={editing === null ? emptyCertificate : certificates[editing]}
+                    onSave={save}
+                    onCancel={editing === null ? null : () => setEditing(null)}
+                />
+            </div>
         </section>
     );
 }

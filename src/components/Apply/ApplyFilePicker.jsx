@@ -5,6 +5,7 @@ import Image from "next/image";
 
 import fileIcon from "@/assets/Apply/icons/file-16.svg";
 import uploadIcon from "@/assets/Apply/icons/upload-16.svg";
+import { fillClass } from "@/components/Apply/ApplyFormControls";
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -32,7 +33,7 @@ export function validateFile(file, types) {
 // null and the reason it was refused. Other buttons (e.g. Edit) can open it
 // with `openFilePicker(id)`. Keyboard users reach the real file input, which
 // shows its focus on the field.
-export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onPick, label }) {
+export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onPick, label, onSubtle = false }) {
     const inputRef = useRef(null);
     const open = () => inputRef.current?.click();
 
@@ -61,7 +62,7 @@ export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onP
                 tabIndex={-1}
                 className={`flex h-[42px] w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-[13px] text-sm leading-[1.4] transition-colors peer-focus-visible:border-action peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-action hover:border-action ${
                     invalid ? "border-required" : "border-border-default"
-                } ${fileName ? "bg-surface-brand-subtle" : "bg-[#f8f9fa]"}`}
+                } ${fillClass(fileName, onSubtle)}`}
             >
                 <span className="flex min-w-0 items-center gap-3">
                     <Image src={uploadIcon} alt="" width={16} height={16} className="shrink-0" />
@@ -69,7 +70,7 @@ export function ApplyFilePicker({ id, types, fileName, invalid, describedBy, onP
                         {fileName || `Choose ${typeList(types)} (Max 5 MB)`}
                     </span>
                 </span>
-                <span className="shrink-0 text-[10px] text-action">BROWSE</span>
+                <span className="shrink-0 text-xs leading-[1.4] text-action">BROWSE</span>
             </button>
         </>
     );
