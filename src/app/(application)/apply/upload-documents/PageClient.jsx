@@ -9,7 +9,7 @@ import UploadDocumentsForm, {
     validateUploadDocuments,
 } from "@/components/UploadDocuments/UploadDocumentsForm";
 
-// Figma frame 1878:21612: stage 5 of 6. Next checks every required document
+// Figma frame 1919:5166: stage 5 of 6. Next checks every required document
 // is attached and moves to the review stage; Back keeps the entries and
 // returns to stage 4.
 const UploadDocumentsPage = () => {

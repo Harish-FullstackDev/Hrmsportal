@@ -99,7 +99,7 @@ export default function SignInToYourAccount() {
                         setPassword(e.target.value);
                         setError(null);
                     }}
-                    placeholder="Create a Strong Password"
+                    placeholder="Enter your password"
                     invalid={Boolean(error)}
                     aria-describedby={describedBy}
                 >
