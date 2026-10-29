@@ -134,7 +134,7 @@ function DeclarationCheckbox({ id, checked, onChange, invalid, describedBy, chil
 export function Declaration({ values, errors, onChange }) {
     return (
         <section aria-labelledby="declaration-title" className="flex w-full flex-col gap-6 rounded-xl bg-white p-6">
-            <h2 id="declaration-title" className="text-lg leading-[1.2] font-medium text-ink">
+            <h2 id="declaration-title" className="text-base leading-[1.2] font-medium text-ink">
                 Declaration
             </h2>
             {DECLARATIONS.map(({ field, required, text }) => (
@@ -154,7 +154,7 @@ export function Declaration({ values, errors, onChange }) {
                         ))}
                     </DeclarationCheckbox>
                     {errors[field] && (
-                        <p id={`${field}-message`} className="pl-6 text-xs leading-[1.4] text-required">
+                        <p id={`${field}-message`} className="pl-6 text-sm leading-[1.4] text-required">
                             {errors[field]}
                         </p>
                     )}

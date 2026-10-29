@@ -1,5 +1,7 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
+
 import chevronYear from "@/assets/Apply/icons/chevron-down-light-24.svg";
 import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
 import ChoiceField from "@/components/ExperienceEducation/ChoiceField";
@@ -147,7 +149,7 @@ export function experienceSummary(values) {
 
 function SectionHeading({ id, children }) {
     return (
-        <h2 id={id} className="text-lg leading-[1.2] font-medium text-[#0b1c30]">
+        <h2 id={id} className="text-base leading-[1.2] font-medium text-[#0b1c30]">
             {children}
         </h2>
     );
@@ -158,7 +160,7 @@ function SectionHeading({ id, children }) {
 // then degree, field of study, university and year in four columns) and an
 // Experience card whose questions after the first row depend on the level:
 // a fresher gets the project / real-world-work chips; anyone else gets their
-// work history, notice period questions and a Compensation card.
+// work history, notice period questions and compensation.
 export default function ExperienceEducationForm({ values, errors, onChange }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
 
@@ -189,19 +191,57 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
     const levelQuestions = questionsFor(values.relevantExperience);
     const experienced = isExperienced(values.relevantExperience);
     const salary = (field, required) => (
-        <ApplyField id={field} label={experiencedLabels[field]} required={required} error={errors[field]}>
-            <ApplyTextInput
-                {...control(field)}
-                inputMode="decimal"
-                placeholder="Enter CTC in LPA"
-                // Lakhs per annum: digits with up to two decimals.
-                onChange={(event) => {
-                    const next = event.target.value.replace(/[^\d.]/g, "");
-                    if (/^\d{0,4}(\.\d{0,2})?$/.test(next)) setValue(field, next);
-                }}
-            />
-        </ApplyField>
+        <div
+            ref={(node) => {
+                salaryNodes.current[field] = node;
+            }}
+        >
+            <ApplyField id={field} label={experiencedLabels[field]} required={required} error={errors[field]}>
+                <ApplyTextInput
+                    {...control(field)}
+                    inputMode="decimal"
+                    placeholder="Enter CTC in LPA"
+                    // Lakhs per annum: digits with up to two decimals.
+                    onChange={(event) => {
+                        const next = event.target.value.replace(/[^\d.]/g, "");
+                        if (/^\d{0,4}(\.\d{0,2})?$/.test(next)) setValue(field, next);
+                    }}
+                />
+            </ApplyField>
+        </div>
     );
+
+    // The shortening question shows only while serving notice, which shifts
+    // the salary fields a column. They slide over from where they were: their
+    // spots are noted before the answer changes, then each animates from its
+    // old spot to the new one (FLIP).
+    const salaryNodes = useRef({});
+    const salaryStarts = useRef(null);
+    const setServingNotice = (next) => {
+        salaryStarts.current = Object.fromEntries(
+            Object.entries(salaryNodes.current)
+                .filter(([, node]) => node)
+                .map(([field, node]) => [field, { x: node.offsetLeft, y: node.offsetTop }]),
+        );
+        setValue("servingNotice", next);
+    };
+    useLayoutEffect(() => {
+        const starts = salaryStarts.current;
+        salaryStarts.current = null;
+        if (!starts || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        for (const [field, node] of Object.entries(salaryNodes.current)) {
+            const from = starts[field];
+            if (!node || !from) continue;
+            const dx = from.x - node.offsetLeft;
+            const dy = from.y - node.offsetTop;
+            if (dx || dy) {
+                node.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], {
+                    duration: 350,
+                    easing: "cubic-bezier(0.2, 0, 0, 1)",
+                });
+            }
+        }
+    }, [values.servingNotice]);
 
     return (
         <div className="flex w-full flex-col gap-8">
@@ -261,14 +301,15 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                                 onChange={(next) => setValue("workHistory", next)}
                             />
                             <hr className="border-border-default" />
-                            <div className="grid gap-x-8 gap-y-6 lg:grid-cols-3">
+                            {/* Relative: the salary slide measures against this grid. */}
+                            <div className="relative grid gap-x-8 gap-y-6 lg:grid-cols-3">
                                 <ChoiceField
                                     field="servingNotice"
                                     label={experiencedLabels.servingNotice}
                                     options={yesNo}
                                     value={values.servingNotice}
                                     error={errors.servingNotice}
-                                    onChange={(next) => setValue("servingNotice", next)}
+                                    onChange={setServingNotice}
                                 />
                                 <ChoiceField
                                     field="noticePeriod"
@@ -292,25 +333,14 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                                         className="motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
                                     />
                                 )}
+                                {/* Start on the left, or beside the shortening question when it shows. */}
+                                {salary("currentSalary", hasCurrentRole(values))}
+                                {salary("expectedSalary", true)}
                             </div>
                         </div>
                     )}
                 </div>
             </section>
-
-            {experienced && (
-                // Figma 1878:20459: the section name in the first of three columns.
-                <section
-                    aria-labelledby="compensation-title"
-                    className="grid w-full gap-x-8 gap-y-2 rounded-xl bg-white p-6 motion-safe:animate-[apply-check-in_250ms_ease-out_both] lg:grid-cols-3"
-                >
-                    <h2 id="compensation-title" className="text-lg leading-[1.2] font-medium text-[#0b1c30]">
-                        Compensation
-                    </h2>
-                    {salary("currentSalary", hasCurrentRole(values))}
-                    {salary("expectedSalary", true)}
-                </section>
-            )}
         </div>
     );
 }

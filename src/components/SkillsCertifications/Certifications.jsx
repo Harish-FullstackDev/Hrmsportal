@@ -178,7 +178,7 @@ export default function Certifications({ value, onChange }) {
 
     return (
         <section aria-labelledby="certifications-title" className="flex flex-col gap-8">
-            <h2 id="certifications-title" className="text-lg leading-[1.2] font-medium text-[#0b1c30]">
+            <h2 id="certifications-title" className="text-base leading-[1.2] font-medium text-[#0b1c30]">
                 Certifications
             </h2>
             {certificates.length > 0 && (

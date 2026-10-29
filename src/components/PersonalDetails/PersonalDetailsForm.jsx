@@ -26,7 +26,7 @@ import {
 
 export const emptyPersonalDetails = {
     firstName: "",
-    surname: "",
+    middleName: "",
     lastName: "",
     email: "",
     phoneCode: DEFAULT_PHONE_CODE,
@@ -72,7 +72,7 @@ export function validatePersonalDetails(values) {
     requireValue("city", "Enter your city.");
     requireValue("pan", "Enter your PAN number.");
 
-    for (const field of ["firstName", "surname", "lastName"]) {
+    for (const field of ["firstName", "middleName", "lastName"]) {
         if (!errors[field] && valueOf(field) && !NAME_PATTERN.test(valueOf(field))) {
             errors[field] = "Use letters only, without special characters.";
         }
@@ -159,7 +159,7 @@ function LanguagePicker({ value, error, onChange }) {
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
                     <div className="flex items-center gap-3 md:w-[400px]">
-                        <span id="languages-label" className="text-lg leading-[1.2] font-medium whitespace-nowrap text-[#374151]">
+                        <span id="languages-label" className="text-base leading-[1.2] font-medium whitespace-nowrap text-[#374151]">
                             Language <span className="text-[#ef4444]">*</span>
                         </span>
                         <div className="min-w-0 flex-1">
@@ -178,7 +178,7 @@ function LanguagePicker({ value, error, onChange }) {
                         </div>
                     </div>
                     <div className="flex items-center gap-3 md:w-[400px]">
-                        <span className="text-lg leading-[1.2] font-medium whitespace-nowrap text-[#374151]">
+                        <span className="text-base leading-[1.2] font-medium whitespace-nowrap text-[#374151]">
                             Fluency <span className="text-[#ef4444]">*</span>
                         </span>
                         <div className="min-w-0 flex-1">
@@ -278,15 +278,15 @@ export default function PersonalDetailsForm({ values, errors, onChange }) {
                 <p className="text-xs leading-[1.4] text-[#44474d]">
                     The fields marked with an asterisk (<span className="text-[#ba1a1a]">*</span>) are required.
                 </p>
-                <h2 id="personal-details-title" className="text-lg leading-[1.2] font-medium text-[#374151]">
+                <h2 id="personal-details-title" className="text-base leading-[1.2] font-medium text-[#374151]">
                     Personal Details
                 </h2>
                 <div className="grid w-full gap-x-8 gap-y-4 rounded-xl bg-white p-6 md:grid-cols-2 lg:grid-cols-3">
                     <ApplyField id="firstName" label="First Name" required hint={NAME_HINT} error={errors.firstName}>
                         {text("firstName", { autoComplete: "given-name", placeholder: "Ex: Priya" }, NAME_HINT)}
                     </ApplyField>
-                    <ApplyField id="surname" label="Sur Name" error={errors.surname}>
-                        {text("surname", { autoComplete: "additional-name" })}
+                    <ApplyField id="middleName" label="Middle Name" error={errors.middleName}>
+                        {text("middleName", { autoComplete: "additional-name" })}
                     </ApplyField>
                     <ApplyField id="lastName" label="Last Name" required error={errors.lastName}>
                         {text("lastName", { autoComplete: "family-name", placeholder: "Ex: Menon" })}

@@ -29,7 +29,7 @@ export function ApplyField({ id, label, required = false, hint, error, className
     const messageId = `${id}-message`;
     return (
         <div className={`relative flex min-w-0 flex-col has-[[aria-expanded=true]]:z-30 ${className}`}>
-            <label htmlFor={id} className="text-lg leading-[1.2] font-medium text-[#374151]">
+            <label htmlFor={id} className="text-base leading-[1.2] font-medium text-[#374151]">
                 {label}
                 {required && <span className="text-[#ef4444]"> *</span>}
             </label>

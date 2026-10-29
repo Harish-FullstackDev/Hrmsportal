@@ -98,7 +98,7 @@ const ReviewSubmitPage = () => {
 
     return (
         <ApplyStage className="flex flex-col gap-8">
-            <h2 className="text-lg leading-[1.2] font-medium text-ink">Check Your Details, then Submit Your Application.</h2>
+            <h2 className="text-base leading-[1.2] font-medium text-ink">Check Your Details, then Submit Your Application.</h2>
             <ApplicationReview resume={resume} resumeUrl={resumeUrl} data={stepData} />
             <HeardFrom values={values} errors={errors} onChange={handleChange} />
 

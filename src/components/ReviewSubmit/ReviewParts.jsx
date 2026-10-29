@@ -13,11 +13,11 @@ export function ReviewCard({ title, editHref, children, className = "" }) {
     return (
         <section aria-label={title} className={`flex w-full flex-col gap-6 rounded-xl bg-white p-6 ${className}`}>
             <div className="flex items-center justify-between gap-4">
-                <h2 className="text-lg leading-[1.2] font-medium text-ink">{title}</h2>
+                <h2 className="text-base leading-[1.2] font-medium text-ink">{title}</h2>
                 {editHref && (
                     <Link
                         href={editHref}
-                        className="flex items-center gap-1 rounded-lg px-4 py-2 text-xs leading-[1.4] text-action transition-colors hover:bg-surface-brand-subtle"
+                        className="flex items-center gap-1 rounded-lg px-4 py-2 text-sm leading-[1.4] text-action transition-colors hover:bg-surface-brand-subtle"
                     >
                         Edit<span className="sr-only"> {title}</span>
                         <Image src={editIcon} alt="" width={10.5} height={10.5} />
@@ -41,7 +41,7 @@ const isEmpty = (value) => value == null || value === "" || (Array.isArray(value
 export function ReviewField({ label, value, className = "" }) {
     return (
         <div className={`flex min-w-0 flex-col gap-0.5 ${className}`}>
-            <dt className="text-xs leading-[1.4] text-ink-secondary">{label}</dt>
+            <dt className="text-sm leading-[1.4] text-ink-secondary">{label}</dt>
             <dd className={`text-sm leading-[1.4] break-words ${isEmpty(value) ? "text-hint" : "text-ink"}`}>
                 {isEmpty(value)
                     ? "Not provided"
@@ -61,7 +61,7 @@ export function ReviewField({ label, value, className = "" }) {
 export function ReviewTags({ label, items, className = "" }) {
     return (
         <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
-            <p className="text-xs leading-[1.4] text-ink-secondary">{label}</p>
+            <p className="text-sm leading-[1.4] text-ink-secondary">{label}</p>
             {items.length === 0 ? (
                 <p className="text-sm leading-[1.4] text-hint">Not provided</p>
             ) : (

@@ -56,7 +56,7 @@ function WorkLinks({ links, errors, onChange }) {
 
     return (
         <section aria-labelledby="work-links-label" className="flex flex-col gap-3 rounded-xl bg-white p-6">
-            <label id="work-links-label" htmlFor={linkId(0)} className="text-lg leading-[1.2] font-medium text-[#374151]">
+            <label id="work-links-label" htmlFor={linkId(0)} className="text-base leading-[1.2] font-medium text-[#374151]">
                 Portfolio, GitHub or Other Work links
             </label>
             <ul className="flex flex-col gap-3">
@@ -129,7 +129,7 @@ export default function SkillsCertificationsForm({ values, errors, onChange }) {
     return (
         <div className="flex w-full flex-col gap-8">
             <section aria-labelledby="skills-label" className="flex flex-col gap-3 rounded-xl bg-white p-6">
-                <label id="skills-label" htmlFor="skillsPicker" className="text-lg leading-[1.2] font-medium text-[#374151]">
+                <label id="skills-label" htmlFor="skillsPicker" className="text-base leading-[1.2] font-medium text-[#374151]">
                     Skills <span className="text-[#ef4444]">*</span>
                 </label>
                 <ApplyTagPicker

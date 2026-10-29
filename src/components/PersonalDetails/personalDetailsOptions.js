@@ -95,7 +95,7 @@ export const languages = [
     "German",
     "Spanish",
 ];
-export const fluencyLevels = ["Native", "Fluent", "Professional", "Conversational", "Basic"];
+export const fluencyLevels = ["Native", "Fluent", "Conversational", "Basic"];
 
 // Phone country codes for the same countries, with the length of a local
 // (national) number there, used by the phone check.

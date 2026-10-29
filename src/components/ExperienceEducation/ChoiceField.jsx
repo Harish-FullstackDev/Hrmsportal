@@ -71,7 +71,7 @@ export default function ChoiceField({
 
     return (
         <fieldset className={`flex min-w-0 flex-col gap-3 ${className}`}>
-            <legend className="mb-3 text-lg leading-[1.2] font-medium text-[#0b1c30]">
+            <legend className="mb-3 text-base leading-[1.2] font-medium text-[#0b1c30]">
                 {label}
                 {required && <span className="text-[#d64545]"> *</span>}
             </legend>

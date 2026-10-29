@@ -6,7 +6,7 @@ export const experienceLevels = ["Fresher", "1 to 2", "3 to 4", "5 to 8", "8+"];
 
 export const yesNo = ["Yes", "No"];
 
-export const noticePeriods = ["15 Days", "30 Days", "45 Days", "60 Days", "90 Days", "More than 90 Days"];
+export const noticePeriods = ["Immediate", "15 Days", "30 Days", "45 Days", "60 Days", "90 Days", "More than 90 Days"];
 
 export const shortenOptions = ["Yes", "No", "Not Sure"];
 

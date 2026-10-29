@@ -46,7 +46,7 @@ function DocumentRow({ field, label, types, multiple, value, error, onChange, on
 
     return (
         <div className="flex flex-col gap-3 py-6 first:pt-0 last:pb-0">
-            <label htmlFor={field} className="text-lg leading-[1.2] font-medium text-[#374151]">
+            <label htmlFor={field} className="text-base leading-[1.2] font-medium text-[#374151]">
                 {label}
                 {!multiple && <span className="text-[#ef4444]"> *</span>}
             </label>

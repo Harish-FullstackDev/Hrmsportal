@@ -95,7 +95,7 @@ export default function UploadResume({ error, onError }) {
         <section className="grid w-full items-start gap-8 lg:grid-cols-[minmax(0,755fr)_minmax(0,533fr)] lg:gap-6">
             <div className="flex w-full flex-col gap-6 rounded-xl bg-white p-6 drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)]">
                 <div className="flex flex-col">
-                    <h2 className="text-lg leading-[1.2] font-medium text-ink">
+                    <h2 className="text-base leading-[1.2] font-medium text-ink">
                         <label htmlFor={inputId}>Upload Your Resume</label>
                     </h2>
                     <p className="text-sm leading-[1.4] text-ink-secondary">

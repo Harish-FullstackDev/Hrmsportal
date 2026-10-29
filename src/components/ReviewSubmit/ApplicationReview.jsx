@@ -32,35 +32,17 @@ function useDocumentUrl(field, fileName) {
     return url;
 }
 
-// Figma 1878:22139: the resume itself in a scrolling grey frame (PDFs show
-// inline; Word files can't, so they show their name with a link instead).
-function ResumePreview({ resume, url }) {
-    if (!resume) return <p className="text-sm leading-[1.4] text-hint">No resume uploaded</p>;
-    if (resume.type === "application/pdf") {
-        return (
-            <div className="h-[471px] w-full overflow-hidden rounded-lg bg-[#f8f9fa] p-3 lg:px-[120px] lg:py-6">
-                <iframe src={url} title={`Resume: ${resume.name}`} className="size-full rounded bg-white" />
-            </div>
-        );
-    }
-    return (
-        <a href={url} target="_blank" rel="noreferrer" className="w-fit hover:underline">
-            <FileChip name={resume.name} />
-        </a>
-    );
-}
-
-// Figma 1878:22197: the photograph (240 square) and signature (240 x 120 on
-// white) on a grey panel.
+// Figma 1919:5985: the photograph (240 square) over the signature (240 x 120
+// on white), 24 apart on a grey panel.
 function PhotoAndSignature({ documents }) {
     const photoUrl = useDocumentUrl("photograph", documents.photograph);
     const signatureUrl = useDocumentUrl("signature", documents.signature);
-    const frame = "relative overflow-hidden rounded flex items-center justify-center text-xs text-hint";
+    const frame = "relative overflow-hidden rounded flex items-center justify-center text-sm text-hint";
 
     return (
-        <div className="flex w-full flex-col gap-6 rounded-xl bg-[#f8f9fa] p-6 lg:w-[552px] lg:shrink-0">
+        <div className="flex w-full flex-col gap-6 rounded-xl bg-[#f8f9fa] p-6 lg:w-auto lg:shrink-0">
             <p className="text-sm leading-[1.4] text-ink">Photograph &amp; Signature</p>
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6 lg:flex-col lg:items-start">
                 <div className={`${frame} size-[240px] bg-white`}>
                     {photoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- a local object URL
@@ -82,24 +64,40 @@ function PhotoAndSignature({ documents }) {
     );
 }
 
-// Figma 1878:22147: each other document with its file and a tick once
-// attached (the photograph and signature show in the panel instead).
-function DocumentList({ documents }) {
-    const rows = DOCUMENTS_LIST.filter(({ field }) => field !== "photograph" && field !== "signature");
+// Figma 1919:5939: the resume, then each other document, with its file and a
+// tick once attached (the photograph and signature show in the panel
+// instead). On desktop the rows share the panel's height evenly. The resume's
+// name opens it in a new tab.
+function DocumentList({ resume, resumeUrl, documents }) {
+    const rows = [
+        { field: "resume", label: "Resume", files: resume ? [resume.name] : [], href: resumeUrl },
+        ...DOCUMENTS_LIST.filter(({ field }) => field !== "photograph" && field !== "signature").map(
+            ({ field, label, multiple }) => ({
+                field,
+                label,
+                files: multiple ? documents[field] ?? [] : documents[field] ? [documents[field]] : [],
+            }),
+        ),
+    ];
     return (
-        <ul className="flex min-w-0 flex-1 flex-col gap-6">
-            {rows.map(({ field, label, multiple }) => {
-                const files = multiple ? documents[field] ?? [] : documents[field] ? [documents[field]] : [];
+        <ul className="flex min-w-0 flex-1 flex-col lg:self-stretch">
+            {rows.map(({ field, label, files, href }) => {
                 return (
                     <li
                         key={field}
-                        className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-neutral-100 py-2 last:border-b-0 md:grid-cols-[minmax(0,296px)_1fr_auto]"
+                        className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-[#f1f3f5] py-6 last:border-b-0 md:grid-cols-[minmax(0,296px)_1fr_auto] lg:flex-1 lg:py-8"
                     >
                         <span className="text-sm leading-[1.4] text-black">{label}</span>
                         <span className="col-span-2 row-start-2 flex flex-wrap gap-2 md:col-span-1 md:row-start-1 md:col-start-2">
-                            {files.map((name, index) => (
-                                <FileChip key={`${name}-${index}`} name={name} />
-                            ))}
+                            {files.map((name, index) =>
+                                href ? (
+                                    <a key={name} href={href} target="_blank" rel="noreferrer" className="max-w-full hover:underline">
+                                        <FileChip name={name} />
+                                    </a>
+                                ) : (
+                                    <FileChip key={`${name}-${index}`} name={name} />
+                                ),
+                            )}
                         </span>
                         <Image
                             src={files.length > 0 ? checkOn : checkOff}
@@ -131,7 +129,7 @@ export default function ApplicationReview({ resume, resumeUrl, data }) {
             <ReviewCard title="Personal Details" editHref={applyStepHref(1)}>
                 <ReviewGrid>
                     <ReviewField label="First Name" value={personal.firstName} />
-                    <ReviewField label="Sur Name" value={personal.surname} />
+                    <ReviewField label="Middle Name" value={personal.middleName} />
                     <ReviewField label="Last Name" value={personal.lastName} />
                     <ReviewField label="Email" value={personal.email} />
                     <ReviewField label="Mobile Number" value={phone(personal.phoneCode, personal.phone)} />
@@ -179,13 +177,9 @@ export default function ApplicationReview({ resume, resumeUrl, data }) {
                 )}
             </ReviewCard>
 
-            <ReviewCard title="Resume" editHref={applyStepHref(0)}>
-                <ResumePreview resume={resume} url={resumeUrl} />
-            </ReviewCard>
-
             <ReviewCard title="Upload Documents" editHref={applyStepHref(4)}>
-                <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-16">
-                    <DocumentList documents={documents} />
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-16">
+                    <DocumentList resume={resume} resumeUrl={resumeUrl} documents={documents} />
                     <PhotoAndSignature documents={documents} />
                 </div>
             </ReviewCard>
