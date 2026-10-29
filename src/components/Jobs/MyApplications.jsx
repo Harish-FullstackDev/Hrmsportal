@@ -249,8 +249,8 @@ function ApplicationCard({ application, job, onWithdraw }) {
 // then one full-width card per application. `jobs` is every open job, loaded
 // on the server; an application only records the position title, so its
 // location and department come from the open job of that title.
-// `embedded` (My Profile, Figma 1867:3647): the page has its own heading, and
-// the tabs sit inside the page margins on a grey rule, the open one in blue.
+// `embedded` (My Profile, Figma 1867:3647): the page has its own heading and
+// margins; the tabs sit on a grey rule, the open one in blue.
 export default function MyApplications({ jobs, embedded = false }) {
     const applications = useApplications();
     const [tab, setTab] = useState("active");
@@ -263,7 +263,7 @@ export default function MyApplications({ jobs, embedded = false }) {
             <div
                 className={
                     embedded
-                        ? "mx-4 border-b border-border-default bg-white px-4 sm:mx-16 sm:px-8"
+                        ? "border-b border-border-default bg-white px-4 sm:px-8"
                         : "w-full bg-white px-4 shadow-[0px_4px_8px_rgba(0,0,0,0.06)] sm:px-16"
                 }
             >
@@ -295,7 +295,7 @@ export default function MyApplications({ jobs, embedded = false }) {
                 </div>
             </div>
 
-            <section className="w-full px-4 pt-8 pb-16 sm:px-16">
+            <section className={embedded ? "w-full pt-8" : "w-full px-4 pt-8 pb-16 sm:px-16"}>
                 {applications === null ? (
                     <div className="h-[175px] w-full animate-pulse rounded-xl bg-neutral-100" aria-busy="true" />
                 ) : visible.length === 0 ? (

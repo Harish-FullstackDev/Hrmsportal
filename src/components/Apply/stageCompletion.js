@@ -1,16 +1,15 @@
-import { validateAvailabilityCompensation } from "@/components/AvailabilityCompensation/AvailabilityCompensationForm";
 import { validateExperienceEducation } from "@/components/ExperienceEducation/ExperienceEducationForm";
 import { validatePersonalDetails } from "@/components/PersonalDetails/PersonalDetailsForm";
 import { validateSkillsCertifications } from "@/components/SkillsCertifications/SkillsCertificationsForm";
+import { validateUploadDocuments } from "@/components/UploadDocuments/UploadDocumentsForm";
 import { applySteps } from "@/components/Apply/applySteps";
 
-// Each form stage's validator, by slug (called with the stage values and the
-// Current Status chosen in stage 3).
+// Each form stage's validator, by slug.
 const validators = {
     "personal-details": validatePersonalDetails,
     "experience-and-education": validateExperienceEducation,
     "skills-and-certifications": validateSkillsCertifications,
-    "availability-and-compensation": validateAvailabilityCompensation,
+    "upload-documents": validateUploadDocuments,
 };
 
 // Whether stage `index` has saved, valid answers. Stage 1 needs a resume;
@@ -21,6 +20,5 @@ export function isStageComplete(index, { resume, stepData }) {
     const validate = validators[slug];
     if (!validate) return true;
     const saved = stepData[slug];
-    const status = stepData["experience-and-education"]?.employmentStatus;
-    return Boolean(saved) && Object.keys(validate(saved, status)).length === 0;
+    return Boolean(saved) && Object.keys(validate(saved)).length === 0;
 }

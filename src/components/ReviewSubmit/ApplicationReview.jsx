@@ -1,136 +1,194 @@
-import { availabilityFieldsFor, experienceFieldsFor } from "@/components/Apply/applicantStatus";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+
+import checkOff from "@/assets/Apply/icons/doc-check-off-16.svg";
+import checkOn from "@/assets/Apply/icons/doc-check-on-16.svg";
+import { FileChip } from "@/components/Apply/ApplyFilePicker";
+import { loadDocumentFile } from "@/components/Apply/applicationStorage";
 import { applyStepHref } from "@/components/Apply/applySteps";
-import { availabilityLabels, formatSalary } from "@/components/AvailabilityCompensation/AvailabilityCompensationForm";
-import { experienceLabels, universityName } from "@/components/ExperienceEducation/ExperienceEducationForm";
+import { experienceSummary } from "@/components/ExperienceEducation/ExperienceEducationForm";
 import { phoneCodeFor } from "@/components/PersonalDetails/PersonalDetailsForm";
-import { workLinks } from "@/components/SkillsCertifications/SkillsCertificationsForm";
-import { ReviewField, ReviewGrid, ReviewSection, ReviewSkillLevels } from "@/components/ReviewSubmit/ReviewParts";
+import { certificationsOf, workLinks } from "@/components/SkillsCertifications/SkillsCertificationsForm";
+import { DOCUMENTS_LIST } from "@/components/UploadDocuments/UploadDocumentsForm";
+import { ReviewCard, ReviewField, ReviewGrid, ReviewTags } from "@/components/ReviewSubmit/ReviewParts";
 
-// Native date inputs store yyyy-mm-dd; the review shows dd/mm/yyyy.
-const formatDate = (value) => (value ? value.split("-").reverse().join("/") : "");
+const phone = (code, number) => (number ? `${phoneCodeFor(code).code} ${number}` : "");
 
-// Experience answers drawn with a dropdown arrow (they were picked from lists).
-const EXPERIENCE_SELECTS = new Set([
-    "totalExperience",
-    "relevantExperience",
-    "qualification",
-    "university",
-    "graduationYear",
-]);
+// Object URL for a file kept in this browser (see applicationStorage), or
+// null while loading or when there is none.
+function useDocumentUrl(field, fileName) {
+    const [file, setFile] = useState(null);
+    useEffect(() => {
+        let cancelled = false;
+        if (fileName) loadDocumentFile(field).then((found) => !cancelled && setFile(found));
+        return () => {
+            cancelled = true;
+        };
+    }, [field, fileName]);
+    const url = useMemo(() => (fileName && file ? URL.createObjectURL(file) : null), [fileName, file]);
+    useEffect(() => () => url && URL.revokeObjectURL(url), [url]);
+    return url;
+}
 
-const DATE_FIELDS = new Set(["earliestStart", "lastWorkingDay", "availableFrom"]);
+// Figma 1878:22139: the resume itself in a scrolling grey frame (PDFs show
+// inline; Word files can't, so they show their name with a link instead).
+function ResumePreview({ resume, url }) {
+    if (!resume) return <p className="text-sm leading-[1.4] text-hint">No resume uploaded</p>;
+    if (resume.type === "application/pdf") {
+        return (
+            <div className="h-[471px] w-full overflow-hidden rounded-lg bg-[#f8f9fa] p-3 lg:px-[120px] lg:py-6">
+                <iframe src={url} title={`Resume: ${resume.name}`} className="size-full rounded bg-white" />
+            </div>
+        );
+    }
+    return (
+        <a href={url} target="_blank" rel="noreferrer" className="w-fit hover:underline">
+            <FileChip name={resume.name} />
+        </a>
+    );
+}
 
-const availabilityValue = (field, value) => {
-    if (DATE_FIELDS.has(field)) return formatDate(value);
-    if (field.endsWith("Salary")) return formatSalary(value);
-    return value;
-};
+// Figma 1878:22197: the photograph (240 square) and signature (240 x 120 on
+// white) on a grey panel.
+function PhotoAndSignature({ documents }) {
+    const photoUrl = useDocumentUrl("photograph", documents.photograph);
+    const signatureUrl = useDocumentUrl("signature", documents.signature);
+    const frame = "relative overflow-hidden rounded flex items-center justify-center text-xs text-hint";
 
-// Figma 1403:11918: stage 6 of the application. One card per earlier stage,
-// 32 apart, each echoing that stage's answers read-only. The experience and
-// availability cards show only the fields the Current Status asks for.
+    return (
+        <div className="flex w-full flex-col gap-6 rounded-xl bg-[#f8f9fa] p-6 lg:w-[552px] lg:shrink-0">
+            <p className="text-sm leading-[1.4] text-ink">Photograph &amp; Signature</p>
+            <div className="flex flex-wrap items-center gap-6">
+                <div className={`${frame} size-[240px] bg-white`}>
+                    {photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- a local object URL
+                        <img src={photoUrl} alt="Your photograph" className="size-full object-cover" />
+                    ) : (
+                        "No photograph"
+                    )}
+                </div>
+                <div className={`${frame} h-[120px] w-[240px] bg-white`}>
+                    {signatureUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- a local object URL
+                        <img src={signatureUrl} alt="Your signature" className="max-h-[71px] max-w-[157px] object-contain" />
+                    ) : (
+                        "No signature"
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Figma 1878:22147: each other document with its file and a tick once
+// attached (the photograph and signature show in the panel instead).
+function DocumentList({ documents }) {
+    const rows = DOCUMENTS_LIST.filter(({ field }) => field !== "photograph" && field !== "signature");
+    return (
+        <ul className="flex min-w-0 flex-1 flex-col gap-6">
+            {rows.map(({ field, label, multiple }) => {
+                const files = multiple ? documents[field] ?? [] : documents[field] ? [documents[field]] : [];
+                return (
+                    <li
+                        key={field}
+                        className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-neutral-100 py-2 last:border-b-0 md:grid-cols-[minmax(0,296px)_1fr_auto]"
+                    >
+                        <span className="text-sm leading-[1.4] text-black">{label}</span>
+                        <span className="col-span-2 row-start-2 flex flex-wrap gap-2 md:col-span-1 md:row-start-1 md:col-start-2">
+                            {files.map((name, index) => (
+                                <FileChip key={`${name}-${index}`} name={name} />
+                            ))}
+                        </span>
+                        <Image
+                            src={files.length > 0 ? checkOn : checkOff}
+                            alt={files.length > 0 ? "Attached" : "Not attached"}
+                            width={16}
+                            height={16}
+                            className="col-start-2 row-start-1 md:col-start-3"
+                        />
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
+// Figma 1878:21982 onwards: stage 6's cards, one per earlier stage, each
+// echoing that stage's answers read-only with an Edit link back to it.
 // `data` is the apply context's stepData; missing answers show "Not provided".
-export default function ApplicationReview({ resume, resumeUrl, role, data }) {
+export default function ApplicationReview({ resume, resumeUrl, data }) {
     const personal = data["personal-details"] ?? {};
     const experience = data["experience-and-education"] ?? {};
     const skills = data["skills-and-certifications"] ?? {};
-    const availability = data["availability-and-compensation"] ?? {};
+    const documents = data["upload-documents"] ?? {};
+
+    const links = workLinks(skills).filter((link) => link.url.trim());
 
     return (
         <div className="flex w-full flex-col gap-8">
-            <ReviewSection title="Upload Resume" editHref={applyStepHref(0)} className="flex h-[90px] items-center">
-                {resume ? (
-                    <a
-                        href={resumeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="truncate text-lg leading-[1.2] font-medium text-[#374151] hover:text-action hover:underline"
-                    >
-                        {resume.name}
-                    </a>
-                ) : (
-                    <p className="text-sm leading-5 text-hint">No resume uploaded</p>
+            <ReviewCard title="Personal Details" editHref={applyStepHref(1)}>
+                <ReviewGrid>
+                    <ReviewField label="First Name" value={personal.firstName} />
+                    <ReviewField label="Sur Name" value={personal.surname} />
+                    <ReviewField label="Last Name" value={personal.lastName} />
+                    <ReviewField label="Email" value={personal.email} />
+                    <ReviewField label="Mobile Number" value={phone(personal.phoneCode, personal.phone)} />
+                    <ReviewField label="Gender" value={personal.gender} />
+                    <ReviewField label="PAN No." value={personal.pan} />
+                    <ReviewField label="Country" value={personal.country} />
+                    <ReviewField label="State" value={personal.state} />
+                    <ReviewField label="City" value={personal.city} />
+                    <ReviewField
+                        label="Languages"
+                        value={(personal.languages ?? []).map(({ language, fluency }) => `${language} (${fluency})`).join(", ")}
+                    />
+                    {personal.altPhone && (
+                        <ReviewField label="Alternate Mobile Number" value={phone(personal.altPhoneCode, personal.altPhone)} />
+                    )}
+                    {personal.linkedIn && <ReviewField label="LinkedIn Profile URL" value={personal.linkedIn} />}
+                </ReviewGrid>
+            </ReviewCard>
+
+            <ReviewCard title="Experience and Education" editHref={applyStepHref(2)}>
+                <ReviewGrid>
+                    {experienceSummary(experience).map(({ field, label, value }) => (
+                        <ReviewField
+                            key={field}
+                            label={label}
+                            value={field === "realWorldWork" && Array.isArray(value) ? value.join(", ") : value}
+                            className={field === "workHistory" ? "md:col-span-2" : ""}
+                        />
+                    ))}
+                </ReviewGrid>
+            </ReviewCard>
+
+            <ReviewCard title="Skills and Certifications" editHref={applyStepHref(3)}>
+                <ReviewTags
+                    label="Certifications"
+                    items={certificationsOf(skills).map(({ name, provider, month, year }) => (
+                        <>
+                            {name} <span className="text-ink-secondary">| {provider} | {`${month} ${year}`}</span>
+                        </>
+                    ))}
+                />
+                <ReviewTags label="Skills" items={skills.skills ?? []} />
+                {links.length > 0 && (
+                    <ReviewTags label="Portfolio, GitHub or Other Work links" items={links.map((link) => `${link.type}: ${link.url.trim()}`)} />
                 )}
-            </ReviewSection>
+            </ReviewCard>
 
-            <ReviewSection title="Personal Details" editHref={applyStepHref(1)} className="pt-[38px] pb-[34px]">
-                <ReviewGrid>
-                    <ReviewField
-                        label="First name"
-                        required
-                        value={personal.firstName}
-                        hint="Names should match in both Aadhaar and UAN"
-                    />
-                    <ReviewField label="Last Name" required value={personal.lastName} />
-                    <ReviewField label="Email address" required value={personal.email} />
-                    <ReviewField label="Role" required value={role} />
-                    <ReviewField label="Gender" required value={personal.gender} />
-                    <ReviewField label="LinkedIn Profile URL" required value={personal.linkedIn} />
-                    <ReviewField
-                        label="Phone Number"
-                        value={personal.phone}
-                        kind="phone"
-                        phoneCode={phoneCodeFor(personal.phoneCode).code}
-                    />
-                    <ReviewField label="Nationality" required value={personal.nationality} />
-                    <ReviewField label="Country" required value={personal.country} kind="select" />
-                    <ReviewField label="State" required value={personal.state} kind="select" />
-                    <ReviewField label="City" required value={personal.city} />
-                </ReviewGrid>
-            </ReviewSection>
+            <ReviewCard title="Resume" editHref={applyStepHref(0)}>
+                <ResumePreview resume={resume} url={resumeUrl} />
+            </ReviewCard>
 
-            <ReviewSection title="Experience and Education" editHref={applyStepHref(2)} className="pt-[38px] pb-[34px]">
-                <ReviewGrid>
-                    {experienceFieldsFor(experience.employmentStatus).map((field) => (
-                        <ReviewField
-                            key={field}
-                            label={experienceLabels[field]}
-                            required
-                            value={field === "university" ? universityName(experience) : experience[field]}
-                            kind={EXPERIENCE_SELECTS.has(field) ? "select" : undefined}
-                        />
-                    ))}
-                </ReviewGrid>
-            </ReviewSection>
-
-            <ReviewSection title="Skills and Certifications" editHref={applyStepHref(3)} className="pt-[38px] pb-[34px]">
-                <div className="flex w-full flex-col gap-6">
-                    <dl className="w-full lg:max-w-[417px]">
-                        <ReviewField label="Skills" required value={skills.skills} tone="muted" valueClassName="text-hint" />
-                    </dl>
-                    <ReviewSkillLevels levels={skills.roleSkills} />
-                    <dl className="grid gap-5 md:grid-cols-2 lg:grid-cols-[417px_417px]">
-                        <ReviewField
-                            label="Certification"
-                            value={skills.certifications}
-                            tone="muted"
-                            valueClassName="text-[#0284c7]"
-                        />
-                        <ReviewField
-                            label="Portfolio, GitHub or Other Work links"
-                            value={workLinks(skills)
-                                .filter((link) => link.url.trim())
-                                .map((link) => `${link.type}: ${link.url.trim()}`)}
-                            tone="muted"
-                            valueClassName="text-hint"
-                        />
-                    </dl>
+            <ReviewCard title="Upload Documents" editHref={applyStepHref(4)}>
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-16">
+                    <DocumentList documents={documents} />
+                    <PhotoAndSignature documents={documents} />
                 </div>
-            </ReviewSection>
-
-            <ReviewSection title="Availability and Compensation" editHref={applyStepHref(4)} className="pt-[38px] pb-[34px]">
-                <ReviewGrid>
-                    {availabilityFieldsFor(experience.employmentStatus).map((field) => (
-                        <ReviewField
-                            key={field}
-                            label={availabilityLabels[field]}
-                            required={!["earliestStart", "languages"].includes(field)}
-                            value={availabilityValue(field, availability[field])}
-                            kind={field === "languages" || field.endsWith("Salary") ? undefined : "select"}
-                        />
-                    ))}
-                </ReviewGrid>
-            </ReviewSection>
+            </ReviewCard>
         </div>
     );
 }

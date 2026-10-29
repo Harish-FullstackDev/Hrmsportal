@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useApplication } from "@/components/Apply/ApplicationContext";
 import ApplicationStepper from "@/components/Apply/ApplicationStepper";
-import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
+import { applyStepHref } from "@/components/Apply/applySteps";
 import { isStageComplete } from "@/components/Apply/stageCompletion";
 
 // The stepper plus click-to-navigate, alongside the stages' Next/Back.
@@ -45,8 +45,8 @@ export default function ApplyStepperNav({ currentIndex }) {
         router.push(applyStepHref(destination));
     };
 
-    // Once submitted, every stage shows done and none can be reopened.
-    if (submitted) return <ApplicationStepper currentIndex={applySteps.length} maxVisited={-1} />;
+    // Once submitted, the confirmation (Figma 1878:22273) shows without the stepper.
+    if (submitted) return null;
 
     return (
         <ApplicationStepper

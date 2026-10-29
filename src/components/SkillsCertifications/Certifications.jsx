@@ -1,0 +1,209 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+
+import certificateIcon from "@/assets/Apply/icons/certificate-24.svg";
+import { ApplyFilePicker, FileChip } from "@/components/Apply/ApplyFilePicker";
+import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
+import { months, workYears } from "@/components/ExperienceEducation/experienceOptions";
+
+const emptyCertificate = { name: "", provider: "", month: "", year: "", fileName: "" };
+
+const REQUIRED = {
+    name: "Enter the certification name.",
+    provider: "Enter the issuing organization.",
+    month: "Select the month of issue.",
+    year: "Select the year of issue.",
+};
+
+function validateCertificate(certificate) {
+    const errors = {};
+    for (const [field, message] of Object.entries(REQUIRED)) {
+        if (!String(certificate[field] ?? "").trim()) errors[field] = message;
+    }
+    const now = new Date();
+    if (
+        !errors.month &&
+        !errors.year &&
+        Number(certificate.year) * 12 + months.indexOf(certificate.month) > now.getFullYear() * 12 + now.getMonth()
+    ) {
+        errors.month = "The issue date can't be in the future.";
+    }
+    return errors;
+}
+
+// Figma 1878:21525: one saved certification on a white bar: name, provider,
+// date, the attached file, and Edit / Delete.
+function CertificateRow({ certificate, onEdit, onDelete }) {
+    return (
+        <li className="grid items-center gap-x-6 gap-y-2 rounded-xl bg-white p-6 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[2fr_1fr_1fr_1.2fr_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+            <span className="flex min-w-0 items-center gap-2">
+                <span aria-hidden="true" className="h-6 w-[3px] shrink-0 rounded bg-[#d9d9d9]" />
+                <Image src={certificateIcon} alt="" width={24} height={24} className="shrink-0" />
+                <span className="truncate text-lg leading-[1.2] font-medium text-ink">{certificate.name}</span>
+            </span>
+            <span className="truncate">{certificate.provider}</span>
+            <span>
+                {certificate.month} {certificate.year}
+            </span>
+            <span>{certificate.fileName && <FileChip name={certificate.fileName} />}</span>
+            <span className="flex items-center gap-2">
+                <button type="button" onClick={onEdit} className="cursor-pointer px-3 py-2 text-muted-ink underline hover:text-ink">
+                    Edit
+                </button>
+                <button type="button" onClick={onDelete} className="cursor-pointer px-3 py-2 text-[#b43838] underline hover:text-required">
+                    Delete
+                </button>
+            </span>
+        </li>
+    );
+}
+
+// Only the file name is kept with the answers for now.
+// TODO: upload the file once the backend takes certificates.
+function CertificateFile({ fileName, error, onChange }) {
+    return (
+        <ApplyField id="certificate-file" label="Upload Your Certificate" error={error}>
+            <ApplyFilePicker
+                id="certificate-file"
+                types={["pdf", "png", "jpg"]}
+                fileName={fileName}
+                invalid={Boolean(error)}
+                describedBy={messageIdFor("certificate-file", { error })}
+                onPick={(file, problem) => onChange(file?.name ?? null, problem)}
+            />
+        </ApplyField>
+    );
+}
+
+// Figma 1878:21546: the certification form on a white card.
+function CertificateEditor({ initial, onSave, onCancel }) {
+    const [certificate, setCertificate] = useState(initial);
+    const [errors, setErrors] = useState({});
+
+    const set = (field, value) => {
+        setCertificate((current) => ({ ...current, [field]: value }));
+        if (errors[field]) setErrors(({ [field]: _, ...rest }) => rest);
+    };
+    const control = (field) => ({
+        id: `certificate-${field}`,
+        name: field,
+        value: certificate[field],
+        invalid: Boolean(errors[field]),
+        describedBy: messageIdFor(`certificate-${field}`, { error: errors[field] }),
+    });
+    const select = (field, options, placeholder) => (
+        <ApplySelect
+            {...control(field)}
+            aria-label={placeholder}
+            onChange={(event) => set(field, event.target.value)}
+            options={options}
+            placeholder={placeholder}
+        />
+    );
+
+    const save = () => {
+        const found = validateCertificate(certificate);
+        setErrors(found);
+        const first = Object.keys(found)[0];
+        if (first) document.getElementById(`certificate-${first}`)?.focus();
+        else onSave(certificate);
+    };
+
+    return (
+        <div className="flex flex-col gap-4 rounded-xl bg-white p-6 motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+            <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
+                <ApplyField id="certificate-name" label="Name of the Certification" error={errors.name}>
+                    <ApplyTextInput
+                        {...control("name")}
+                        onChange={(event) => set("name", event.target.value)}
+                        placeholder="Ex “Enterprise Design Thinking Practitioner”"
+                    />
+                </ApplyField>
+                <ApplyField id="certificate-provider" label="Issuing Organization / Provider" error={errors.provider}>
+                    <ApplyTextInput
+                        {...control("provider")}
+                        onChange={(event) => set("provider", event.target.value)}
+                        placeholder="Ex “IBM”"
+                    />
+                </ApplyField>
+                <ApplyField id="certificate-month" label="Date of Issue" error={errors.month || errors.year}>
+                    <div className="grid grid-cols-2 gap-3">
+                        {select("month", months, "Month")}
+                        {select("year", workYears, "Year")}
+                    </div>
+                </ApplyField>
+                <CertificateFile
+                    fileName={certificate.fileName}
+                    error={errors.fileName}
+                    onChange={(fileName, error) => {
+                        if (error) setErrors((current) => ({ ...current, fileName: error }));
+                        else set("fileName", fileName);
+                    }}
+                />
+            </div>
+            <div className="flex items-center justify-end gap-4">
+                {onCancel && (
+                    <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-3 text-xs leading-[1.4] text-ink-secondary hover:text-ink">
+                        Cancel
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={save}
+                    className="cursor-pointer rounded-lg bg-action px-6 py-3 text-xs leading-[1.4] text-white transition-colors hover:bg-[#005192]"
+                >
+                    {initial === emptyCertificate ? "Add Certificate" : "Save Certificate"}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Figma 1878:21522: the "Certifications" heading, saved certifications as
+// rows with Edit / Delete, and the form to add one (always open, since
+// certifications are optional). `value` is the list.
+export default function Certifications({ value, onChange }) {
+    // null (adding a new one) or the index of the one being edited.
+    const [editing, setEditing] = useState(null);
+    const certificates = value ?? [];
+
+    const save = (certificate) => {
+        onChange(
+            editing === null ? [...certificates, certificate] : certificates.map((item, i) => (i === editing ? certificate : item)),
+        );
+        setEditing(null);
+    };
+
+    return (
+        <section aria-labelledby="certifications-title" className="flex flex-col gap-8">
+            <h2 id="certifications-title" className="text-lg leading-[1.2] font-medium text-[#0b1c30]">
+                Certifications
+            </h2>
+            {certificates.length > 0 && (
+                <ul aria-label="Added certifications" className="flex flex-col gap-4">
+                    {certificates.map((certificate, index) =>
+                        editing === index ? null : (
+                            <CertificateRow
+                                key={`${certificate.name}-${index}`}
+                                certificate={certificate}
+                                onEdit={() => setEditing(index)}
+                                onDelete={() => {
+                                    onChange(certificates.filter((_, i) => i !== index));
+                                    setEditing(null);
+                                }}
+                            />
+                        ),
+                    )}
+                </ul>
+            )}
+            <CertificateEditor
+                key={editing ?? `new-${certificates.length}`}
+                initial={editing === null ? emptyCertificate : certificates[editing]}
+                onSave={save}
+                onCancel={editing === null ? null : () => setEditing(null)}
+            />
+        </section>
+    );
+}

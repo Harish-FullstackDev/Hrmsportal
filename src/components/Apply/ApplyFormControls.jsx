@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 
 import chevronDown from "@/assets/Apply/icons/chevron-down-16.svg";
+import chevronLight from "@/assets/Apply/icons/chevron-down-light-16.svg";
 
 // Form building blocks of the apply stages (Figma 1380:3211 onwards).
 // A field is an 18px label, 12 gap, a 42-tall input, then a 21-tall slot
@@ -16,8 +17,11 @@ import chevronDown from "@/assets/Apply/icons/chevron-down-16.svg";
 // Inputs carry suppressHydrationWarning for the same reason as the auth
 // controls: autofill extensions add attributes before React hydrates.
 
-const boxClass = "h-[42px] w-full rounded-lg border bg-white text-sm leading-5 transition-colors outline-none";
+// Figma 1878:19631: empty fields are grey (#f8f9fa) with a light placeholder;
+// filled ones turn light blue.
+const boxClass = "h-[42px] w-full rounded-lg border text-sm leading-5 transition-colors outline-none";
 const borderClass = (invalid) => (invalid ? "border-required" : "border-border-default");
+const fillClass = (value) => (value ? "bg-surface-brand-subtle" : "bg-[#f8f9fa]");
 
 export const messageIdFor = (id, { hint, error } = {}) => (hint || error ? `${id}-message` : undefined);
 
@@ -27,7 +31,7 @@ export function ApplyField({ id, label, required = false, hint, error, className
         <div className={`relative flex min-w-0 flex-col has-[[aria-expanded=true]]:z-30 ${className}`}>
             <label htmlFor={id} className="text-lg leading-[1.2] font-medium text-[#374151]">
                 {label}
-                {required && <span className="text-[#ef4444]">*</span>}
+                {required && <span className="text-[#ef4444]"> *</span>}
             </label>
             <div className="mt-3">{children}</div>
             <p
@@ -46,7 +50,7 @@ export function ApplyTextInput({ invalid, describedBy, ...props }) {
             suppressHydrationWarning
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
-            className={`${boxClass} ${borderClass(invalid)} px-[13px] text-ink placeholder:text-muted-ink focus:border-action`}
+            className={`${boxClass} ${borderClass(invalid)} ${fillClass(props.value)} px-[13px] text-ink placeholder:text-ink-disabled focus:border-action`}
             {...props}
         />
     );
@@ -59,7 +63,20 @@ export function ApplyTextInput({ invalid, describedBy, ...props }) {
 // the muted colour until something is picked. Keyboard: arrows, Home/End,
 // Enter/Space to pick, Escape to close, letters jump to a match.
 // `onChange` receives { target: { name, value } } like a native change event.
-export function ApplySelect({ id, name, invalid, describedBy, placeholder, options, value, onChange, disabled = false }) {
+// `icon` swaps the chevron (the language and fluency pickers use a lighter one).
+export function ApplySelect({
+    id,
+    name,
+    invalid,
+    describedBy,
+    placeholder,
+    options,
+    value,
+    onChange,
+    disabled = false,
+    icon = chevronDown,
+    "aria-label": ariaLabel,
+}) {
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(-1);
     const buttonRef = useRef(null);
@@ -143,24 +160,23 @@ export function ApplySelect({ id, name, invalid, describedBy, placeholder, optio
                 aria-expanded={open}
                 aria-controls={listId}
                 aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+                aria-label={ariaLabel}
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy}
                 onClick={() => (open ? close() : openList())}
                 onKeyDown={onKeyDown}
                 className={`flex h-[42px] w-full items-center rounded-lg border pr-10 pl-[13px] text-left text-sm leading-5 transition-colors outline-none ${
                     open ? "border-action" : `${borderClass(invalid)} focus:border-action`
-                } ${disabled ? "cursor-not-allowed bg-neutral-100" : "cursor-pointer bg-white"} ${
-                    value ? "text-ink" : "text-muted-ink"
+                } ${disabled ? "cursor-not-allowed bg-neutral-100" : `cursor-pointer ${fillClass(value)}`} ${
+                    value ? "text-ink" : "text-ink-disabled"
                 }`}
             >
                 <span className="truncate">{value || placeholder}</span>
             </button>
             <Image
-                src={chevronDown}
+                src={icon}
                 alt=""
-                width={16}
-                height={16}
-                className={`pointer-events-none absolute top-[13px] right-[13px] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                className={`pointer-events-none absolute top-1/2 right-[13px] -translate-y-1/2 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
             {open && (
                 <ul
@@ -200,11 +216,11 @@ export function ApplySelect({ id, name, invalid, describedBy, placeholder, optio
 export function ApplyPhoneInput({ id, invalid, describedBy, countryCode, codes, onCountryCodeChange, ...props }) {
     return (
         <div
-            className={`${boxClass} ${borderClass(invalid)} flex items-center gap-3 overflow-hidden pr-[13px] pl-[5px] focus-within:border-action`}
+            className={`${boxClass} ${borderClass(invalid)} ${fillClass(props.value)} flex items-center gap-3 overflow-hidden pr-[13px] pl-[5px] focus-within:border-action`}
         >
-            <span className="relative flex h-full min-w-[38px] shrink-0 items-center justify-center gap-0.5 border-r-[0.5px] border-border-strong pr-1 text-muted-ink">
+            <span className="relative flex h-full min-w-[38px] shrink-0 items-center justify-center gap-0.5 border-r border-border-default pr-0.5 text-muted-ink">
                 {countryCode}
-                <Image src={chevronDown} alt="" width={12} height={12} />
+                <Image src={chevronLight} alt="" width={16} height={16} />
                 <select
                     suppressHydrationWarning
                     aria-label="Country code"
@@ -226,7 +242,7 @@ export function ApplyPhoneInput({ id, invalid, describedBy, countryCode, codes, 
                 inputMode="tel"
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy}
-                className="h-full min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-muted-ink"
+                className="h-full min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-disabled"
                 {...props}
             />
         </div>

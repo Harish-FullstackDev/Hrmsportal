@@ -56,3 +56,23 @@ export function saveApplication({ jobSlug, stepData, maxVisited, hasResume }) {
 export function saveResume(file) {
     withStore("readwrite", (store) => (file ? store.put(file, KEY) : store.delete(KEY))).catch(() => {});
 }
+
+// Stage 5's uploaded documents, kept next to the resume so the review can
+// preview the photograph and signature. Best effort, like the rest.
+// TODO: upload to the backend instead once it takes documents.
+const documentKey = (field) => `${KEY}:document:${field}`;
+
+export function saveDocumentFile(field, file) {
+    withStore("readwrite", (store) => (file ? store.put(file, documentKey(field)) : store.delete(documentKey(field)))).catch(
+        () => {},
+    );
+}
+
+// The saved file, or null.
+export async function loadDocumentFile(field) {
+    try {
+        return (await withStore("readonly", (store) => store.get(documentKey(field)))) ?? null;
+    } catch {
+        return null;
+    }
+}

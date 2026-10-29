@@ -76,7 +76,26 @@ export const countryStates = {
 
 export const countries = Object.keys(countryStates);
 
-export const genders = ["Male", "Female", "Prefer not to say"];
+export const genders = ["Male", "Female", "Prefer Not to Say"];
+
+// Language picker suggestions and fluency levels (Figma 1878:19740 names no
+// lists).
+export const languages = [
+    "English",
+    "Arabic",
+    "Hindi",
+    "Malayalam",
+    "Tamil",
+    "Kannada",
+    "Telugu",
+    "Urdu",
+    "Bengali",
+    "Marathi",
+    "French",
+    "German",
+    "Spanish",
+];
+export const fluencyLevels = ["Native", "Fluent", "Professional", "Conversational", "Basic"];
 
 // Phone country codes for the same countries, with the length of a local
 // (national) number there, used by the phone check.

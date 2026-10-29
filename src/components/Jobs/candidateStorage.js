@@ -76,10 +76,12 @@ export function applicationKey(application) {
     return application.id ?? application.appliedAt;
 }
 
-// For the apply flow's submit step, once it exists.
-export function recordApplication({ id, position, resumeName, portfolio }) {
+// For the apply flow's submit step. `reference` is the ID shown to the
+// candidate (e.g. ASC-000123).
+export function recordApplication({ id, reference, position, resumeName, portfolio }) {
     const entry = {
         id,
+        reference,
         position,
         appliedAt: new Date().toISOString(),
         status: "Application Received",

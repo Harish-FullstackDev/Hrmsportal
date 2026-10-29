@@ -44,10 +44,14 @@ export default function useStageForm({ slug, initial, validate, nextIndex, field
     // Lets the stepper keep (going back) or check (going forward) this stage.
     useStageControl({ save: handleBack, validateNow });
 
+    // Shows a message on one field (e.g. a refused file).
+    const setFieldError = (field, message) => setErrors((current) => ({ ...current, [field]: message }));
+
     return {
         values,
         setValues,
         errors,
+        setFieldError,
         handleChange,
         handleBack,
         handleNext,

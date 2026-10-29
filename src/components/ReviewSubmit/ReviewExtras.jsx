@@ -1,74 +1,109 @@
+"use client";
+
 import Image from "next/image";
 
 import checkboxChecked from "@/assets/Apply/icons/checkbox-checked-16.svg";
-import { ApplyField, ApplySelect, ApplyTextInput, messageIdFor } from "@/components/Apply/ApplyFormControls";
+import ChoiceField from "@/components/ExperienceEducation/ChoiceField";
 
 // Questions answered on the review stage itself, plus the declaration
-// (Figma 1435:14827 and 1435:14918). Stored under the "review-and-submit"
+// (Figma 1878:22199 and 1878:22233). Stored under the "review-and-submit"
 // stage like any other stage's answers.
 
-const yesNo = ["Yes", "No"];
-const heardFromOptions = ["LinkedIn", "Company website", "Job portal", "Referral", "Social media", "Campus / university", "Other"];
+const heardFromOptions = ["LinkedIn", "Company Website", "Job board", "Employee Referral", "Campus", "Other"];
+
+// The declaration's statements, in Figma's order; `required` ones must be
+// ticked to submit.
+const DECLARATIONS = [
+    {
+        field: "confirmAccurate",
+        required: true,
+        text: [
+            "I confirm that the information I have provided is accurate and complete to the best of my knowledge.",
+            "I understand that incorrect or misleading information may affect my application or any offer made to me.",
+        ],
+    },
+    {
+        field: "consentData",
+        required: true,
+        text: [
+            "I consent to Ascendus Company collecting and processing my personal data, including my resume, identity details and uploaded documents, to assess my application.",
+            "I have read the Privacy Policy.",
+        ],
+    },
+    {
+        field: "consentVerification",
+        required: true,
+        text: [
+            "I understand that my education, employment history and identity details may be verified by Ascendus or an authorised third party,",
+            "and I agree to provide the documents needed for this.",
+        ],
+    },
+    {
+        field: "consentSharing",
+        required: true,
+        text: [
+            "I understand that my data may be shared with Ascendus group companies and service providers in other countries, only for official internal purposes.",
+        ],
+    },
+    {
+        field: "ownWork",
+        required: true,
+        text: [
+            "I confirm that any portfolio or work samples I have shared are my own, and that I have permission to share them without breaching client confidentiality.",
+        ],
+    },
+    {
+        field: "noGuarantee",
+        required: true,
+        text: ["I understand that submitting this application does not guarantee an interview or an offer."],
+    },
+    {
+        field: "contactConsent",
+        text: [
+            "I agree that Ascendus may contact me about my application by phone, SMS, WhatsApp or email, using the mobile number and email address I have provided.",
+        ],
+    },
+    {
+        field: "keepProfile",
+        text: [
+            "Keep my profile for other suitable roles at Ascendus, and notify me when new roles matching my profile are posted.",
+        ],
+    },
+];
 
 export const emptyReviewExtras = {
-    previousConnection: "",
     heardFrom: "",
-    referralName: "",
-    referralCode: "",
-    declarationAccepted: false,
-    keepProfile: false,
+    ...Object.fromEntries(DECLARATIONS.map(({ field }) => [field, false])),
 };
 
 // Returns { field: message } for every invalid field; empty when valid.
 export function validateReviewExtras(values) {
     const errors = {};
-    if (!values.previousConnection) errors.previousConnection = "Select an option.";
     if (!values.heardFrom) errors.heardFrom = "Select an option.";
-    if (!values.declarationAccepted) errors.declarationAccepted = "Please confirm the declaration to submit.";
+    for (const { field, required } of DECLARATIONS) {
+        if (required && !values[field]) errors[field] = "Please confirm this to submit.";
+    }
     return errors;
 }
 
-// Figma 1435:14827: editable card in the review's card style, 3 columns.
-// (Figma's second row also repeats "Available from" and "Willing to relocate",
-// but as hidden layers, so they are left out.)
-export function AdditionalInformation({ values, errors, onChange }) {
-    const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
-    const control = (field) => ({
-        id: field,
-        name: field,
-        value: values[field],
-        invalid: Boolean(errors[field]),
-        describedBy: messageIdFor(field, { error: errors[field] }),
-        onChange: (event) => setValue(field, event.target.value),
-    });
-
+// Figma 1878:22199: a white card with the chip question.
+export function HeardFrom({ values, errors, onChange }) {
     return (
-        <section aria-label="Additional information" className="w-full">
-            <div className="grid w-full gap-x-5 gap-y-4 rounded-xl bg-white px-4 pt-[38px] pb-[34px] shadow-[0px_4px_38.3px_0px_rgba(0,0,0,0.21)] sm:px-[23px] md:grid-cols-2 lg:grid-cols-3">
-                <ApplyField
-                    id="previousConnection"
-                    label="Previous connection with SST or Ascendus"
-                    required
-                    error={errors.previousConnection}
-                >
-                    <ApplySelect {...control("previousConnection")} options={yesNo} placeholder="Select one Option" />
-                </ApplyField>
-                <ApplyField id="heardFrom" label="How did you hear about us" required error={errors.heardFrom}>
-                    <ApplySelect {...control("heardFrom")} options={heardFromOptions} placeholder="Select one Option" />
-                </ApplyField>
-                <ApplyField id="referralName" label="Referral Name" error={errors.referralName}>
-                    <ApplyTextInput {...control("referralName")} autoComplete="off" placeholder="Enter Referral Name" />
-                </ApplyField>
-                <ApplyField id="referralCode" label="Referral Code" error={errors.referralCode}>
-                    <ApplyTextInput {...control("referralCode")} autoComplete="off" placeholder="Referral Code" />
-                </ApplyField>
-            </div>
+        <section className="w-full rounded-xl bg-white p-6">
+            <ChoiceField
+                field="heardFrom"
+                label="How did you hear about us?"
+                options={heardFromOptions}
+                value={values.heardFrom}
+                error={errors.heardFrom}
+                onChange={(next) => onChange({ ...values, heardFrom: next }, "heardFrom")}
+            />
         </section>
     );
 }
 
-// Figma checkbox: 16px white box, #d4d4d4 border, 4 radius; ticked it uses
-// the blue checkbox from the skills check.
+// Figma 1878:22236: 16px box (grey with a dark border; red when missing),
+// the blue checkbox when ticked.
 function DeclarationCheckbox({ id, checked, onChange, invalid, describedBy, children }) {
     return (
         <label htmlFor={id} className="flex cursor-pointer items-start gap-2 text-sm leading-[1.4] text-neutral-700">
@@ -86,7 +121,7 @@ function DeclarationCheckbox({ id, checked, onChange, invalid, describedBy, chil
                 {checked ? (
                     <Image src={checkboxChecked} alt="" width={16} height={16} />
                 ) : (
-                    <span className={`size-4 rounded border bg-white ${invalid ? "border-required" : "border-neutral-300"}`} />
+                    <span className={`size-4 rounded border bg-[#f8f9fa] ${invalid ? "border-required" : "border-border-strong"}`} />
                 )}
             </span>
             <span>{children}</span>
@@ -94,55 +129,37 @@ function DeclarationCheckbox({ id, checked, onChange, invalid, describedBy, chil
     );
 }
 
-// Figma 1435:14918: blue 16px "Declaration" title, 24 above the checkboxes
-// (32 apart). The first is required to submit.
+// Figma 1878:22233: a white card titled "Declaration", the statements 24
+// apart; required ones end in a red asterisk.
 export function Declaration({ values, errors, onChange }) {
-    const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
-
     return (
-        <section aria-labelledby="declaration-title" className="flex w-full flex-col gap-6">
-            <h2 id="declaration-title" className="text-base leading-[1.5] text-action">
+        <section aria-labelledby="declaration-title" className="flex w-full flex-col gap-6 rounded-xl bg-white p-6">
+            <h2 id="declaration-title" className="text-lg leading-[1.2] font-medium text-ink">
                 Declaration
             </h2>
-            <div className="flex w-full max-w-[680px] flex-col gap-8">
-                <div className="flex flex-col gap-1">
+            {DECLARATIONS.map(({ field, required, text }) => (
+                <div key={field} className="flex flex-col gap-1">
                     <DeclarationCheckbox
-                        id="declarationAccepted"
-                        checked={values.declarationAccepted}
-                        onChange={(checked) => setValue("declarationAccepted", checked)}
-                        invalid={Boolean(errors.declarationAccepted)}
-                        describedBy={errors.declarationAccepted ? "declarationAccepted-message" : undefined}
+                        id={field}
+                        checked={Boolean(values[field])}
+                        onChange={(checked) => onChange({ ...values, [field]: checked }, field)}
+                        invalid={Boolean(errors[field])}
+                        describedBy={errors[field] ? `${field}-message` : undefined}
                     >
-                        <span className="mb-1 block">
-                            I confirm that the information I have provided is accurate and complete to the best of my
-                            knowledge.
-                        </span>
-                        <span className="block">
-                            I understand that incorrect or misleading information may affect my application or any offer
-                            made to me.
-                        </span>
+                        {text.map((line, index) => (
+                            <span key={index} className="block">
+                                {line}
+                                {required && index === text.length - 1 && <span className="text-[#d64545]"> *</span>}
+                            </span>
+                        ))}
                     </DeclarationCheckbox>
-                    {errors.declarationAccepted && (
-                        <p id="declarationAccepted-message" className="pl-6 text-xs leading-[1.4] text-required">
-                            {errors.declarationAccepted}
+                    {errors[field] && (
+                        <p id={`${field}-message`} className="pl-6 text-xs leading-[1.4] text-required">
+                            {errors[field]}
                         </p>
                     )}
                 </div>
-
-                <div className="flex flex-col gap-1">
-                    <DeclarationCheckbox
-                        id="keepProfile"
-                        checked={values.keepProfile}
-                        onChange={(checked) => setValue("keepProfile", checked)}
-                        describedBy="keepProfile-hint"
-                    >
-                        Keep my profile for future roles
-                    </DeclarationCheckbox>
-                    <p id="keepProfile-hint" className="text-xs leading-[1.4] font-light text-muted-ink italic">
-                        Keep my profile for future opportunities
-                    </p>
-                </div>
-            </div>
+            ))}
         </section>
     );
 }

@@ -131,8 +131,10 @@ export function ApplyTagPicker({
     listLabel = "Selected",
     muted = false,
     chevron = true,
-    // Shows the tags above the field instead (stage 4's skills).
+    // Shows the tags above the field instead.
     tagsAbove = false,
+    // Shows the tags beside the field on desktop (stage 4's skills, Figma 1878:21496).
+    tagsBeside = false,
     // Figma's standalone pickers are 417 wide; inside a grid cell pass "".
     widthClassName = "lg:max-w-[417px]",
     invalid,
@@ -174,46 +176,48 @@ export function ApplyTagPicker({
     );
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className={tagsBeside ? "flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-6" : "flex flex-col gap-2"}>
             {tagsAbove && tags}
-            <div className={`relative w-full ${widthClassName}`}>
-                <input
-                    suppressHydrationWarning
-                    ref={inputRef}
-                    id={id}
-                    value={query}
-                    disabled={full}
-                    autoComplete="off"
-                    placeholder={full ? fullPlaceholder : placeholder}
-                    aria-invalid={invalid || undefined}
-                    aria-describedby={describedBy}
-                    onChange={(event) => setQuery(event.target.value)}
-                    className={`${boxClass} ${borderClass(invalid)} text-ink ${
-                        full
-                            ? "cursor-not-allowed bg-[#f9fafb] placeholder:text-hint"
-                            : muted
-                              ? "bg-[#f9fafb] placeholder:text-hint"
-                              : "bg-white placeholder:text-muted-ink"
-                    }`}
-                    {...inputProps}
-                    onKeyDown={(event) => {
-                        inputProps.onKeyDown(event);
-                        if (event.defaultPrevented) return;
-                        if (event.key === "Enter") {
-                            event.preventDefault();
-                            add(query);
-                        } else if (event.key === "Backspace" && !query && value.length) {
-                            remove(value[value.length - 1]);
-                        }
-                    }}
-                />
-                {chevron && <Chevron disabled={full} onClick={() => inputRef.current?.focus()} />}
-                {list}
-            </div>
+            <div className={`flex w-full flex-col gap-2 ${widthClassName} ${tagsBeside ? "lg:shrink-0" : ""}`}>
+                <div className="relative w-full">
+                    <input
+                        suppressHydrationWarning
+                        ref={inputRef}
+                        id={id}
+                        value={query}
+                        disabled={full}
+                        autoComplete="off"
+                        placeholder={full ? fullPlaceholder : placeholder}
+                        aria-invalid={invalid || undefined}
+                        aria-describedby={describedBy}
+                        onChange={(event) => setQuery(event.target.value)}
+                        className={`${boxClass} ${borderClass(invalid)} text-ink ${
+                            full
+                                ? "cursor-not-allowed bg-[#f9fafb] placeholder:text-hint"
+                                : muted
+                                  ? "bg-[#f9fafb] placeholder:text-hint"
+                                  : "bg-white placeholder:text-muted-ink"
+                        }`}
+                        {...inputProps}
+                        onKeyDown={(event) => {
+                            inputProps.onKeyDown(event);
+                            if (event.defaultPrevented) return;
+                            if (event.key === "Enter") {
+                                event.preventDefault();
+                                add(query);
+                            } else if (event.key === "Backspace" && !query && value.length) {
+                                remove(value[value.length - 1]);
+                            }
+                        }}
+                    />
+                    {chevron && <Chevron disabled={full} onClick={() => inputRef.current?.focus()} />}
+                    {list}
+                </div>
 
-            {full && limitMessage && (
-                <p className="text-[11px] leading-[16.5px] font-bold text-[#ef4444] italic">{limitMessage}</p>
-            )}
+                {full && limitMessage && (
+                    <p className="text-[11px] leading-[16.5px] font-bold text-[#ef4444] italic">{limitMessage}</p>
+                )}
+            </div>
 
             {!tagsAbove && tags}
         </div>

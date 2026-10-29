@@ -9,7 +9,6 @@ export const jobDetails = {
     summary:
         "We are seeking a senior UX leader who guides delivery, supports pursuits, maintains project-level client relationships & mentors teams through selective hands-on design work. The role involves leading end-to-end UX initiatives, defining user-centric design strategies, collaborating with product and engineering teams, and ensuring user-centric design solutions that deliver business value. The ideal candidate will combine strong design leadership with strategic thinking, business acumen, and a deep understanding of user research and design best practices.",
     // Skills the candidate rates in the apply flow (Figma 1380:3598).
-    roleSkills: ["Typography", "Design system", "Website Design", "User Experience", "Photoshop", "Figma"],
     roleSummary: [
         { label: "Department", value: "Product Design" },
         { label: "Location", value: "Kochi, Kerala, India / Hybrid" },
