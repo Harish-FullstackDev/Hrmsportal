@@ -112,8 +112,8 @@ function Chevron({ onClick, disabled }) {
     );
 }
 
-// Figma 1380:3449 (skills) / 1380:3678 (certifications): entries show as
-// removable tags under the field (or above it, with `tagsAbove`). With a `max`, the field greys out at the
+// Figma 1919:5044 (skills) / 1380:3678 (certifications): entries show as
+// removable field-height tags under the field (or above it, with `tagsAbove`). With a `max`, the field greys out at the
 // limit ("Maximum skills reached") and the red limit line appears. Enter adds
 // the typed text or the highlighted suggestion; Backspace on an empty field
 // removes the last tag. `muted` draws Figma's grey #f9fafb field even below
@@ -160,11 +160,11 @@ export function ApplyTagPicker({
     const remove = (skill) => onChange(value.filter((item) => item !== skill));
 
     const tags = value.length > 0 && (
-        <ul aria-label={listLabel} className="flex flex-wrap gap-3">
+        <ul aria-label={listLabel} className={`flex flex-wrap gap-3 ${tagsBeside ? "lg:min-w-0 lg:flex-1" : ""}`}>
             {value.map((skill) => (
                 <li
                     key={skill}
-                    className="flex items-center gap-2 rounded border border-[#0284c7] bg-white px-[11px] py-[5px] text-xs leading-[1.4] text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                    className="flex h-[42px] items-center gap-2 rounded border border-[#0284c7] bg-white px-[13px] text-sm leading-[1.4] whitespace-nowrap text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
                 >
                     {skill}
                     <button type="button" onClick={() => remove(skill)} aria-label={`Remove ${skill}`} className="cursor-pointer">

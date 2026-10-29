@@ -120,8 +120,8 @@ function WorkLinks({ links, errors, onChange }) {
     );
 }
 
-// Figma 1878:21407: stage 4 of the application. A Skills card (the picker,
-// 417 wide, with the picked skills beside it), the Certifications section,
+// Figma 1878:21407: stage 4 of the application. A Skills card (Figma
+// 1919:5044: the picker, 417 wide, with the picked skills beside it), the Certifications section,
 // and the work links card.
 export default function SkillsCertificationsForm({ values, errors, onChange }) {
     const setValue = (field, value) => onChange({ ...values, [field]: value }, field);
@@ -140,7 +140,6 @@ export default function SkillsCertificationsForm({ values, errors, onChange }) {
                     max={MAX_SKILLS}
                     placeholder="Search or add a skill"
                     fullPlaceholder="Maximum skills reached"
-                    limitMessage={`Maximum ${MAX_SKILLS} skills allowed`}
                     listLabel="Selected skills"
                     tagsBeside
                     muted

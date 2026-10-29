@@ -8,6 +8,8 @@
 // Without JOBS_SUPABASE_URL / JOBS_SUPABASE_PUBLISHABLE_KEY every call
 // returns no jobs, so the pages show their empty states.
 
+import { cacheLife } from "next/cache";
+
 // Slug of the job being applied for, set by /jobs/<slug>/apply and read by
 // the /apply layout.
 export const APPLY_JOB_COOKIE = "hrms-apply-job";
@@ -32,8 +34,15 @@ function mapJob(row) {
     };
 }
 
-// Open jobs matching the extra PostgREST `filters`, newest first.
+// Open jobs matching the extra PostgREST `filters`, newest first. Cached
+// per filter set for about a minute ("minutes" profile), so navigating
+// between apply stages and job pages doesn't wait on Supabase each time.
+// The admin panel lives in the website's project and can't clear this
+// cache, so a newly closed job can stay visible for up to a minute.
 async function fetchOpenJobs(filters = {}) {
+    "use cache";
+    cacheLife("minutes");
+
     const url = process.env.JOBS_SUPABASE_URL;
     const key = process.env.JOBS_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key) {
