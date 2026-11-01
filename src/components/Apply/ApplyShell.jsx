@@ -1,12 +1,29 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-import { usePathname } from "next/navigation";
+import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import PortalHeader from "@/components/CommonComponents/PortalHeader";
-import { ApplicationProvider, RestoredOnly } from "@/components/Apply/ApplicationContext";
+import { ApplicationProvider, RestoredOnly, useApplication } from "@/components/Apply/ApplicationContext";
 import ApplyStepperNav from "@/components/Apply/ApplyStepperNav";
-import { applySteps } from "@/components/Apply/applySteps";
+import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
+
+const LAST_STEP = applySteps.length - 1;
+
+// Once the application is sent, every earlier stage (reached with the
+// browser's Back button, or a bookmark) is replaced by the thank-you page, so
+// the sent form can't be reopened or edited.
+function SubmittedGuard({ currentIndex, children }) {
+    const { restored, submitted } = useApplication();
+    const router = useRouter();
+    const away = restored && submitted && currentIndex !== LAST_STEP;
+
+    useEffect(() => {
+        if (away) router.replace(applyStepHref(LAST_STEP));
+    }, [away, router]);
+
+    return away ? null : children;
+}
 import JobHero from "@/components/JobDetails/JobHero";
 
 // Direction of the last stage change ("next" or "back"), read by ApplyStage.
@@ -51,7 +68,9 @@ export default function ApplyShell({ job, children }) {
                         <JobHero title={job.title} reference={job.jobCode} tags={tags} />
                         <main className="flex w-full flex-1 flex-col gap-8 overflow-x-clip px-4 pt-8 pb-12 sm:px-16">
                             <ApplyStepperNav currentIndex={currentIndex} />
-                            <RestoredOnly>{children}</RestoredOnly>
+                            <RestoredOnly>
+                                <SubmittedGuard currentIndex={currentIndex}>{children}</SubmittedGuard>
+                            </RestoredOnly>
                         </main>
                     </div>
                 </DirectionContext.Provider>

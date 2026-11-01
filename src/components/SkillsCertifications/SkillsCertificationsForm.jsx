@@ -67,7 +67,7 @@ function WorkLinks({ links, errors, onChange }) {
                     return (
                         <li
                             key={index}
-                            className="flex w-full flex-col gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_both] lg:w-[calc(50%-16px)]"
+                            className="flex w-full flex-col gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_backwards] lg:w-[calc(50%-16px)]"
                         >
                             <div className="flex items-center gap-6">
                                 <div

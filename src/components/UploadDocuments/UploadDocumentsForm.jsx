@@ -76,7 +76,7 @@ function DocumentRow({ field, label, types, multiple, value, error, onChange, on
                     {files.map((name, index) => (
                         <li
                             key={`${name}-${index}`}
-                            className="flex flex-col items-start gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                            className="flex flex-col items-start gap-1 motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]"
                         >
                             <FileChip name={name} roomy />
                             <span className="flex items-center gap-1">

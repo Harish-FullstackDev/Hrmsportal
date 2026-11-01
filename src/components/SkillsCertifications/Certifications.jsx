@@ -38,7 +38,7 @@ function validateCertificate(certificate) {
 // attached file, and Edit / Delete.
 function CertificateRow({ certificate, onEdit, onDelete }) {
     return (
-        <li className="grid items-center gap-x-8 gap-y-2 rounded-xl bg-white px-6 py-2 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[minmax(0,360fr)_minmax(0,240fr)_minmax(0,120fr)_minmax(0,200fr)_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+        <li className="grid items-center gap-x-8 gap-y-2 rounded-xl bg-white px-6 py-2 text-sm leading-[1.4] text-ink-secondary md:grid-cols-[minmax(0,360fr)_minmax(0,240fr)_minmax(0,120fr)_minmax(0,200fr)_auto] motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]">
             <span className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true" className="h-[18px] w-[3px] shrink-0 rounded-[2px] bg-[#d9d9d9]" />
                 <span className="flex size-[18px] shrink-0 items-end justify-center">
@@ -117,7 +117,7 @@ function CertificateEditor({ initial, onSave, onCancel }) {
     };
 
     return (
-        <div className="flex flex-col gap-4 rounded-xl bg-[#f8f9fa] p-6 motion-safe:animate-[apply-check-in_200ms_ease-out_both]">
+        <div className="flex flex-col gap-4 rounded-xl bg-[#f8f9fa] p-6 motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]">
             <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
                 <ApplyField id="certificate-name" label="Name of the Certification" error={errors.name}>
                     <ApplyTextInput

@@ -215,7 +215,7 @@ function LanguagePicker({ value, error, onChange }) {
                     {value.map((entry) => (
                         <li
                             key={entry.language}
-                            className="flex items-center gap-2 rounded-xl bg-surface-brand-subtle p-3 text-sm leading-[1.4] text-ink motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                            className="flex items-center gap-2 rounded-xl bg-surface-brand-subtle p-3 text-sm leading-[1.4] text-ink motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]"
                         >
                             <span>
                                 {entry.language} <span className="text-ink-secondary">| {entry.fluency}</span>
@@ -258,9 +258,15 @@ export default function PersonalDetailsForm({ values, errors, onChange }) {
         describedBy: messageIdFor(field, { hint, error: errors[field] }),
     });
     const text = (field, props, hint) => <ApplyTextInput {...control(field, hint)} {...props} />;
+    // Mobile numbers take digits only: anything else typed or pasted is
+    // dropped, and the number stops at the longest length for its code.
     const phone = (field, codeField) => (
         <ApplyPhoneInput
             {...control(field)}
+            onChange={(event) => {
+                const maxLength = Math.max(...phoneCodeFor(values[codeField]).digits);
+                setValue(field, event.target.value.replace(/\D/g, "").slice(0, maxLength));
+            }}
             countryCode={phoneCodeFor(values[codeField]).code}
             codes={phoneCodes}
             onCountryCodeChange={(code) => onChange({ ...values, [codeField]: code }, field)}

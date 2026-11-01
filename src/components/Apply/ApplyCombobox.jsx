@@ -164,7 +164,7 @@ export function ApplyTagPicker({
             {value.map((skill) => (
                 <li
                     key={skill}
-                    className="flex h-[42px] items-center gap-2 rounded border border-[#0284c7] bg-white px-[13px] text-sm leading-[1.4] whitespace-nowrap text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                    className="flex h-[42px] items-center gap-2 rounded border border-[#0284c7] bg-white px-[13px] text-sm leading-[1.4] whitespace-nowrap text-[#0284c7] motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]"
                 >
                     {skill}
                     <button type="button" onClick={() => remove(skill)} aria-label={`Remove ${skill}`} className="cursor-pointer">

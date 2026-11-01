@@ -162,7 +162,9 @@ export function experienceSummary(values) {
 // (grid rows 0fr / 1fr) while the content fades and slides down into place,
 // and the parent grid's 24 gap above it is taken back while closed. Closed
 // content stays mounted but inert. The content is clipped while moving and
-// unclipped once open, so dropdown lists inside can spill out.
+// unclipped once open, so dropdown lists inside can spill out. Open uses
+// translate-none, not translate-y-0: any translate value makes a stacking
+// context, which would trap those lists under the fields that follow.
 function Reveal({ open, className = "", children }) {
     const [settled, setSettled] = useState(open);
     if (!open && settled) setSettled(false);
@@ -174,7 +176,7 @@ function Reveal({ open, className = "", children }) {
                 if (event.target === event.currentTarget && event.propertyName === "grid-template-rows" && open) setSettled(true);
             }}
             className={`grid transition-[grid-template-rows,opacity,translate,margin] duration-500 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none ${
-                open ? "grid-rows-[1fr] translate-y-0 opacity-100" : "-mt-6 grid-rows-[0fr] -translate-y-2 opacity-0"
+                open ? "grid-rows-[1fr] translate-none opacity-100" : "-mt-6 grid-rows-[0fr] -translate-y-2 opacity-0"
             } ${className}`}
         >
             <div className={`min-h-0 ${settled ? "overflow-visible" : `overflow-hidden ${open ? "motion-reduce:overflow-visible" : ""}`}`}>
@@ -362,7 +364,7 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                                         value={values.canShorten}
                                         error={errors.canShorten}
                                         onChange={(next) => setValue("canShorten", next)}
-                                        className="motion-safe:animate-[apply-check-in_200ms_ease-out_both]"
+                                        className="motion-safe:animate-[apply-check-in_200ms_ease-out_backwards]"
                                     />
                                 )}
                                 {/* Start on the left, or beside the shortening question when it shows. */}

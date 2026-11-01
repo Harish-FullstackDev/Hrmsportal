@@ -30,27 +30,40 @@ async function withStore(mode, run) {
     }
 }
 
-// { stepData, maxVisited, resume } from a previous visit in this tab, or null.
-// An application started for a different job is not restored.
+// { stepData, maxVisited, resume, submitted, reference } from a previous visit
+// in this tab, or null. An application started for a different job is not
+// restored. Once submitted, only the flag and the reference are kept.
 export async function loadApplication(jobSlug) {
     try {
         const raw = sessionStorage.getItem(KEY);
         if (!raw) return null;
-        const { jobSlug: savedFor, stepData = {}, maxVisited = 0, hasResume = false } = JSON.parse(raw);
+        const {
+            jobSlug: savedFor,
+            stepData = {},
+            maxVisited = 0,
+            hasResume = false,
+            submitted = false,
+            reference = null,
+        } = JSON.parse(raw);
         if (savedFor !== jobSlug) return null;
         const resume = hasResume ? await withStore("readonly", (store) => store.get(KEY)).catch(() => null) : null;
-        return { stepData, maxVisited, resume: resume ?? null };
+        return { stepData, maxVisited, resume: resume ?? null, submitted, reference };
     } catch {
         return null;
     }
 }
 
-export function saveApplication({ jobSlug, stepData, maxVisited, hasResume }) {
+export function saveApplication({ jobSlug, stepData, maxVisited, hasResume, submitted, reference }) {
     try {
-        sessionStorage.setItem(KEY, JSON.stringify({ jobSlug, stepData, maxVisited, hasResume }));
+        sessionStorage.setItem(KEY, JSON.stringify({ jobSlug, stepData, maxVisited, hasResume, submitted, reference }));
     } catch {
         // Storage full or blocked: keep working in memory.
     }
+}
+
+// Drops the resume and every stage 5 document, once the application is sent.
+export function clearApplicationFiles() {
+    withStore("readwrite", (store) => store.clear()).catch(() => {});
 }
 
 export function saveResume(file) {

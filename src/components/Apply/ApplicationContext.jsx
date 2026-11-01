@@ -2,7 +2,12 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-import { loadApplication, saveApplication, saveResume } from "@/components/Apply/applicationStorage";
+import {
+    clearApplicationFiles,
+    loadApplication,
+    saveApplication,
+    saveResume,
+} from "@/components/Apply/applicationStorage";
 
 // Holds the in-progress application while the candidate moves between stages.
 // It lives in the /apply layout and is also saved to this browser tab (see
@@ -21,8 +26,11 @@ export function ApplicationProvider({ jobSlug, children }) {
     // wait for it so their forms start from the restored answers.
     const [restored, setRestored] = useState(false);
     // True once the application is submitted: the stepper shows every stage
-    // done and the review stage shows the thank-you message.
+    // done, the review stage shows the thank-you message, and the other
+    // stages send the candidate back to it (ApplyShell), so the browser's Back
+    // button can't reopen the sent form. Kept in this tab with the reference.
     const [submitted, setSubmitted] = useState(false);
+    const [reference, setReference] = useState(null);
     // The open stage's { save, validateNow } (see useStageControl), so the
     // stepper can keep or check its entries before leaving it.
     const stageControlRef = useRef(null);
@@ -35,6 +43,8 @@ export function ApplicationProvider({ jobSlug, children }) {
                 setStepDataState(saved.stepData);
                 setMaxVisited(saved.maxVisited);
                 setResumeState(saved.resume);
+                setSubmitted(saved.submitted);
+                setReference(saved.reference);
             }
             setRestored(true);
         });
@@ -44,8 +54,20 @@ export function ApplicationProvider({ jobSlug, children }) {
     }, [jobSlug]);
 
     useEffect(() => {
-        if (restored) saveApplication({ jobSlug, stepData, maxVisited, hasResume: Boolean(resume) });
-    }, [restored, jobSlug, stepData, maxVisited, resume]);
+        if (restored) {
+            saveApplication({ jobSlug, stepData, maxVisited, hasResume: Boolean(resume), submitted, reference });
+        }
+    }, [restored, jobSlug, stepData, maxVisited, resume, submitted, reference]);
+
+    // Marks the application sent and forgets its answers and files, keeping
+    // only the reference for the thank-you message.
+    const completeApplication = useCallback((issuedReference) => {
+        setReference(issuedReference);
+        setSubmitted(true);
+        setStepDataState({});
+        setResumeState(null);
+        clearApplicationFiles();
+    }, []);
 
     const setResume = useCallback((file) => {
         setResumeState(file);
@@ -69,10 +91,11 @@ export function ApplicationProvider({ jobSlug, children }) {
             setMaxVisited,
             restored,
             submitted,
-            setSubmitted,
+            reference,
+            completeApplication,
             stageControlRef,
         }),
-        [resume, resumeUrl, setResume, stepData, setStepData, maxVisited, restored, submitted],
+        [resume, resumeUrl, setResume, stepData, setStepData, maxVisited, restored, submitted, reference, completeApplication],
     );
 
     return <ApplicationContext.Provider value={value}>{children}</ApplicationContext.Provider>;

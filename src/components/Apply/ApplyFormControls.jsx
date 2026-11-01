@@ -242,7 +242,7 @@ export function ApplyPhoneInput({ id, invalid, describedBy, countryCode, codes, 
                 suppressHydrationWarning
                 id={id}
                 type="tel"
-                inputMode="tel"
+                inputMode="numeric"
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy}
                 className="h-full min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-disabled"

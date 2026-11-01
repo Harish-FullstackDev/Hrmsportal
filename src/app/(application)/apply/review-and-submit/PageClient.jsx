@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -15,7 +15,9 @@ import { useApplyJob } from "@/components/Apply/ApplyShell";
 import { recordApplication, recordProfile } from "@/components/Jobs/candidateStorage";
 import { phoneCodeFor } from "@/components/PersonalDetails/PersonalDetailsForm";
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
+import Recaptcha from "@/components/ReviewSubmit/Recaptcha";
 import { Declaration, HeardFrom, emptyReviewExtras, validateReviewExtras } from "@/components/ReviewSubmit/ReviewExtras";
+import { verifyRecaptcha } from "@/lib/recaptcha/verifyRecaptcha";
 
 // Figma frame 1878:21894: stage 6 of 6. Shows every answer for a last check,
 // then asks how they heard about us and the declaration. Submit checks those
@@ -24,10 +26,13 @@ import { Declaration, HeardFrom, emptyReviewExtras, validateReviewExtras } from 
 // in this browser, for My Application.
 const ReviewSubmitPage = () => {
     const job = useApplyJob();
-    const { resume, resumeUrl, stepData, setStepData, submitted, setSubmitted } = useApplication();
+    const { resume, resumeUrl, stepData, setStepData, submitted, reference: referenceId, completeApplication } =
+        useApplication();
     const [incomplete, setIncomplete] = useState([]);
     const [submitting, setSubmitting] = useState(false);
-    const [referenceId, setReferenceId] = useState(null);
+    const [captchaToken, setCaptchaToken] = useState(null);
+    const [captchaError, setCaptchaError] = useState("");
+    const captchaRef = useRef(null);
     const { values, errors, handleChange, handleBack, validateNow } = useStageForm({
         slug: "review-and-submit",
         initial: emptyReviewExtras,
@@ -35,8 +40,11 @@ const ReviewSubmitPage = () => {
         nextIndex: 5,
     });
 
-    const handleSubmit = () => {
-        if (!validateNow()) return;
+    const handleSubmit = async () => {
+        if (submitting) return;
+        const valid = validateNow();
+        if (!captchaToken) setCaptchaError("Please tick \"I'm not a robot\" to submit.");
+        if (!valid || !captchaToken) return;
         setStepData("review-and-submit", values);
 
         const missing = applySteps.slice(0, 5).filter((_, index) => !isStageComplete(index, { resume, stepData }));
@@ -44,9 +52,20 @@ const ReviewSubmitPage = () => {
         if (missing.length > 0) return;
 
         setSubmitting(true);
+        // A token is good for one check only, so a failed one is cleared and
+        // the candidate ticks the box again.
+        // TODO: verify inside the submit Server Action once the backend
+        // takes applications; checked separately here, a script can skip it.
+        const check = await verifyRecaptcha(captchaToken);
+        if (!check.ok) {
+            captchaRef.current?.reset();
+            setCaptchaError(check.error);
+            setSubmitting(false);
+            return;
+        }
+
         // TODO: use the reference the backend issues.
         const reference = `ASC-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0")}`;
-        setReferenceId(reference);
         recordApplication({ id: crypto.randomUUID(), reference, position: job.title, resumeName: resume?.name });
         const personal = stepData["personal-details"] ?? {};
         const roles = stepData["experience-and-education"]?.workHistory ?? [];
@@ -58,7 +77,7 @@ const ReviewSubmitPage = () => {
             employer: latestRole?.organization ?? "",
         });
         setTimeout(() => {
-            setSubmitted(true);
+            completeApplication(reference);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }, 600);
     };
@@ -71,7 +90,7 @@ const ReviewSubmitPage = () => {
         return (
             <ApplyStage className="flex flex-col items-center px-4 py-16 text-center">
                 <div role="status" className="flex flex-col items-center gap-8">
-                    <span className="flex size-16 items-center justify-center rounded-xl bg-[rgba(25,128,56,0.1)] motion-safe:animate-[apply-check-in_400ms_ease-out_both]">
+                    <span className="flex size-16 items-center justify-center rounded-xl bg-[rgba(25,128,56,0.1)] motion-safe:animate-[apply-check-in_400ms_ease-out_backwards]">
                         <Image src={successCheck} alt="" width={30} height={30} />
                     </span>
                     <div className="flex flex-col items-center gap-2">
@@ -104,6 +123,16 @@ const ReviewSubmitPage = () => {
 
             <div className="flex flex-col gap-8">
                 <Declaration values={values} errors={errors} onChange={handleChange} />
+
+                <Recaptcha
+                    ref={captchaRef}
+                    invalid={Boolean(captchaError)}
+                    error={captchaError}
+                    onChange={(token) => {
+                        setCaptchaToken(token);
+                        if (token) setCaptchaError("");
+                    }}
+                />
 
                 {incomplete.length > 0 && (
                     <div role="alert" className="rounded-lg border border-required bg-[#fdf2f2] px-4 py-3 text-sm leading-5 text-required">
