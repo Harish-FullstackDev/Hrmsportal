@@ -51,6 +51,36 @@
   --color-neutral-100: #f1f3f5;
   --color-border-strong: #8695a7;
   --color-rail: #e5eeff; /* apply stepper background rail */
+
+  /* HR dashboard (Figma 1898:5288 / 1905:1303). */
+  --color-primary-100: #d5e2f2;
+  --color-surface-tint: #eff4ff;
+  --color-ink-heading: #0b1c30;
+  --color-ink-body: #45464d;
+  --color-ink-caption: #76777d;
+  --color-card-border: rgb(198 198 205 / 0.3);
+  --color-row-divider: rgb(229 238 255 / 0.6);
+  --color-success-50: #eef6f1;
+  --color-success-500: #008e59;
+  --color-info-50: #f0f9fe;
+  --color-info-700: #0075a4;
+  --color-warning-50: #fef8f0;
+  --color-warning-600: #c28710;
+
+  /* HR job openings / candidates (Figma 1921:3445, 1983:7824). */
+  --color-neutral-200: #e4e7eb;
+  --color-primary-300: #8bb0da;
+  --color-primary-400: #5189c5;
+  --color-accent-subtle: #f5faf1; /* surface/accent-subtle */
+  --color-success-100: #d9ebe0;
+  --color-warning-100: #fcefdd;
+  --color-warning-200: #f9e1be;
+  --color-warning-500: #e8a317;
+  --color-error-100: #fcdfdc;
+  --color-error-200: #f8c3be;
+  --color-slate-line: #1e293b;
+  --color-slate-muted: #94a3b8;
+  --color-surface-drawer: #f8f8f8; /* primary/0 */
 }
 
 /* Apply stages slide in from the side they come from (components/Apply/ApplyStage.jsx). */
@@ -81,6 +111,19 @@
   from {
     opacity: 0;
     transform: scale(0.4);
+  }
+}
+
+/* HR candidate profile drawer sliding in from the right. */
+@keyframes hr-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hr-fade-in {
+  from {
+    opacity: 0;
   }
 }
 
