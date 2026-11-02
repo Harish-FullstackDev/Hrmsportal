@@ -13,16 +13,26 @@ import workIcon from "@/assets/Profile/icons/work-meta.svg";
 
 import { applicationKey, useApplications, withdrawApplication } from "./candidateStorage";
 
-// Hiring pipeline, in order. An application's status is the stage it is at;
-// any status outside this list ends the application and moves it to Withdrawn.
-const STAGES = ["Application Received", "Recruiter Screen", "Technical Portfolio Review", "Executive Panel", "Offer"];
+// Hiring pipeline, in order (values match the application_status enum). An
+// application at one of these stages is active; any other status (hired,
+// rejected, withdrawn) has ended and moves it to the Closed tab.
+const STAGES = [
+    { value: "applied", label: "Application Received" },
+    { value: "screening", label: "Screening" },
+    { value: "shortlisted", label: "Shortlisted" },
+    { value: "assessment", label: "Assessment" },
+    { value: "interviewing", label: "Interviewing" },
+    { value: "offer", label: "Offer" },
+];
+const STAGE_INDEX = Object.fromEntries(STAGES.map(({ value }, index) => [value, index]));
+const ENDED_LABELS = { hired: "Hired", rejected: "Not Selected", withdrawn: "Withdrawn" };
 
 const TABS = [
     { key: "active", label: "Active" },
-    { key: "withdrawn", label: "Withdrawn" },
+    { key: "closed", label: "Closed" },
 ];
 
-const isActive = (application) => STAGES.includes(application.status);
+const isActive = (application) => application.status in STAGE_INDEX;
 
 function formatDate(iso) {
     const date = new Date(iso);
@@ -147,9 +157,10 @@ function ProgressPanel({ stageIndex, interview }) {
 function ApplicationCard({ application, job, headingLevel: Title = "h2", onWithdraw }) {
     const stageIndex = STAGES.indexOf(application.status);
     const active = stageIndex !== -1;
+    const position = job?.title ?? "Position no longer listed";
 
     const location = job?.location ? `${job.location}${job.modeOfWork ? ` (${job.modeOfWork})` : ""}` : null;
-    const department = job?.categories?.[0];
+    const department = job?.department;
 
     return (
         <article className="flex flex-col gap-6 rounded-2xl border border-card-border bg-[#f8f9fa] p-4 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] sm:p-6">
@@ -174,10 +185,10 @@ function ApplicationCard({ application, job, headingLevel: Title = "h2", onWithd
                 <Title className="text-xl leading-[1.2] font-medium capitalize text-ink-heading sm:text-2xl">
                     {job ? (
                         <Link href={`/jobs/${job.slug}`} className="transition-colors hover:text-action">
-                            {application.position}
+                            {position}
                         </Link>
                     ) : (
-                        application.position
+                        position
                     )}
                 </Title>
 
@@ -231,9 +242,16 @@ function ApplicationCard({ application, job, headingLevel: Title = "h2", onWithd
 export default function MyApplications({ jobs, embedded = false }) {
     const applications = useApplications();
     const [tab, setTab] = useState("active");
+    const [error, setError] = useState("");
 
-    const jobsByTitle = Object.fromEntries(jobs.map((job) => [job.title, job]));
-    const visible = (applications ?? []).filter((application) => isActive(application) === (tab === "active"));
+    const visible = applications.filter((application) => isActive(application) === (tab === "active"));
+
+    const withdraw = async (id) => {
+        setError("");
+        const result = await withdrawApplication(id);
+        if (!result.ok) setError(result.error);
+        router.refresh();
+    };
 
     return (
         <>
@@ -255,15 +273,14 @@ export default function MyApplications({ jobs, embedded = false }) {
                                 role="tab"
                                 aria-selected={selected}
                                 onClick={() => setTab(item.key)}
-                                className={`cursor-pointer text-lg leading-[1.2] transition-colors ${
-                                    embedded
+                                className={`cursor-pointer text-lg leading-[1.2] transition-colors ${embedded
                                         ? selected
                                             ? "font-medium text-action"
                                             : "font-medium text-muted-ink hover:text-ink-secondary"
                                         : `border-b-2 px-1 py-4 ${selected
-                                          ? "border-ink font-medium text-ink"
-                                          : "border-transparent text-border-strong hover:text-ink-secondary"}`
-                                }`}
+                                            ? "border-ink font-medium text-ink"
+                                            : "border-transparent text-border-strong hover:text-ink-secondary"}`
+                                    }`}
                             >
                                 {item.label}
                             </button>
@@ -273,12 +290,15 @@ export default function MyApplications({ jobs, embedded = false }) {
             </div>
 
             <section className={embedded ? "w-full pt-8" : "w-full px-4 pt-8 pb-16 sm:px-16"}>
-                {applications === null ? (
-                    <div className="h-[175px] w-full animate-pulse rounded-xl bg-neutral-100" aria-busy="true" />
-                ) : visible.length === 0 ? (
+                {error && (
+                    <p role="alert" className="mb-6 rounded-lg border border-required bg-[#fdf2f2] px-4 py-3 text-sm leading-5 text-required">
+                        {error}
+                    </p>
+                )}
+                {visible.length === 0 ? (
                     <div className="flex flex-col items-start gap-4 py-6">
                         <p className="text-base leading-[1.5] text-ink-secondary">
-                            {tab === "active" ? "You have no active applications." : "You have no withdrawn applications."}
+                            {tab === "active" ? "You have no active applications." : "You have no closed applications."}
                         </p>
                         {tab === "active" && (
                             <Link

@@ -1,8 +1,6 @@
-"use server";
-
-// Checks a reCAPTCHA v2 token with Google. Like every Server Action this is a
-// public endpoint, so it trusts nothing from the caller but the token itself.
-// Returns { ok: true } or { ok: false, error }.
+// Checks a reCAPTCHA v2 token with Google. Server code only: the submit
+// Server Action calls it, so the check can't be skipped by calling the
+// action directly. Returns { ok: true } or { ok: false, error }.
 //
 // Without RECAPTCHA_SECRET_KEY, development uses Google's public test secret,
 // which accepts the test site key's tokens (see Recaptcha.jsx). Production

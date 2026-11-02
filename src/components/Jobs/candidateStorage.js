@@ -2,15 +2,14 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 
-// Saved jobs and submitted applications, kept in this browser until the
-// candidate account has tables of its own (ported from the website's
-// src/lib/candidateStorage.js). Storage can be blocked (private mode, site
+// Saved jobs and the contact details shown on My Profile, kept in this
+// browser until the candidate account has tables for them (ported from the
+// website's src/lib/candidateStorage.js). Applications live in the database. Storage can be blocked (private mode, site
 // data cleared), so every read falls back to an empty list and every write is
 // best effort. Components read through the hooks below, which re-render on
 // every write here and on changes from other tabs.
 
 const SAVED_JOBS_KEY = "hrms-saved-jobs";
-const APPLICATIONS_KEY = "hrms-applications";
 
 const listeners = new Set();
 
@@ -68,29 +67,6 @@ export function setJobSaved(slug, saved) {
     writeList(SAVED_JOBS_KEY, saved ? [...list, slug] : list);
 }
 
-// Newest first. Each entry: { id, position, appliedAt (ISO), status,
-// resumeName, portfolio, interview? }.
-export const useApplications = () => useStoredList(APPLICATIONS_KEY);
-
-export function applicationKey(application) {
-    return application.id ?? application.appliedAt;
-}
-
-// For the apply flow's submit step. `reference` is the ID shown to the
-// candidate (e.g. ASC-000123).
-export function recordApplication({ id, reference, position, resumeName, portfolio }) {
-    const entry = {
-        id,
-        reference,
-        position,
-        appliedAt: new Date().toISOString(),
-        status: "Application Received",
-        resumeName,
-        portfolio,
-    };
-    writeList(APPLICATIONS_KEY, [entry, ...readList(APPLICATIONS_KEY)]);
-}
-
 // Contact details from the candidate's latest submitted application, shown on
 // My Profile: { phone, location, jobTitle, employer }. The account itself
 // only holds the name and email.
@@ -120,12 +96,4 @@ export function recordProfile(profile) {
         // Storage blocked: nothing to keep the change in.
     }
     listeners.forEach((listener) => listener());
-}
-
-// Withdrawing only marks the entry, so it moves to the Withdrawn tab.
-export function withdrawApplication(key) {
-    const list = readList(APPLICATIONS_KEY).map((application) =>
-        applicationKey(application) === key ? { ...application, status: "Withdrawn" } : application,
-    );
-    writeList(APPLICATIONS_KEY, list);
 }

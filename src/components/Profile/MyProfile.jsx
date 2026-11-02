@@ -7,7 +7,6 @@ import phoneIcon from "@/assets/Profile/icons/phone.svg";
 import pinIcon from "@/assets/Profile/icons/pin.svg";
 import shieldIcon from "@/assets/Profile/icons/shield.svg";
 import portrait from "@/assets/Profile/portrait.jpg";
-import MyApplications from "@/components/Jobs/MyApplications";
 
 // TODO: replace with the candidate's profile once the backend serves it.
 // Copy is Figma 2119:6361's sample data.

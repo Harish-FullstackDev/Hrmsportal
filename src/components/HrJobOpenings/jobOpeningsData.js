@@ -1,20 +1,18 @@
-// Static content from Figma 1921:3445 until there's an HR backend.
+// Labels for the HR job openings list. The jobs themselves come from the
+// database (listJobsForHr in src/lib/applications/queries.js).
 
-// Tabs and the status filter list these in this order. `tone` picks the
-// HrStatusPill colours.
+// The status filter lists these in this order (values match the job_status
+// enum); `swatch` colours the square beside the status in the table.
 export const JOB_STATUSES = [
-    { value: "published", label: "Published", tone: "success" },
-    { value: "draft", label: "Draft", tone: "neutral" },
-    { value: "on-hold", label: "On Hold", tone: "warning" },
-    { value: "closed", label: "Closed", tone: "danger" },
+    { value: "published", label: "Published", swatch: "bg-success-500" },
+    { value: "draft", label: "Draft", swatch: "bg-muted-ink" },
+    { value: "on_hold", label: "On Hold", swatch: "bg-warning-500" },
+    { value: "closed", label: "Closed", swatch: "bg-required" },
 ];
 
-export const jobOpenings = [
-    { id: "JOB-101", title: "UI/UX Designer", department: "Design", type: "Full-time", vacancies: 1, applications: 11, closing: "05 Nov 2026", status: "published" },
-    { id: "JOB-102", title: "Product Designer", department: "Design", type: "Full-time", vacancies: 2, applications: 11, closing: "20 Nov 2026", status: "published" },
-    { id: "JOB-103", title: "Frontend Developer", department: "Engineering", type: "Contract", vacancies: 3, applications: 11, closing: "02 Nov 2026", status: "published" },
-    { id: "JOB-104", title: "HR Executive", department: "People", type: "Full-time", vacancies: 1, applications: 11, closing: "01 Dec 2026", status: "on-hold" },
-    { id: "JOB-105", title: "Business Analyst", department: "Product", type: "Full-time", vacancies: 2, applications: 10, closing: "30 Nov 2026", status: "published" },
-    { id: "JOB-106", title: "Data Engineer", department: "Engineering", type: "Contract", vacancies: 3, applications: 10, closing: "15 Dec 2026", status: "draft" },
-    { id: "JOB-107", title: "Frontend Developer", department: "Engineering", type: "Full-time", vacancies: 1, applications: 11, closing: "10 Oct 2026", status: "closed" },
-];
+export { EMPLOYMENT_TYPES as JOB_TYPES } from "@/lib/jobs/jobForm";
+
+// "Oct 29, 2026" from an ISO date. Read in UTC so the server and the browser
+// print the same day.
+const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+export const formatPostedOn = (isoDate) => (isoDate ? dateFormat.format(new Date(`${isoDate}T00:00:00Z`)) : "");

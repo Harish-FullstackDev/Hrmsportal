@@ -8,6 +8,7 @@ import closeIcon from "@/assets/HrApplicants/icons/close-24.svg";
 import expandIcon from "@/assets/HrApplicants/icons/expand-20.svg";
 import fileIcon from "@/assets/HrApplicants/icons/file-32.svg";
 import HrMenu from "@/components/HrCommon/HrMenu";
+import { applicationFileUrl } from "@/lib/applications/actions";
 import { APPLICANT_STATUSES, formatAppliedOn, initialsOf } from "./applicantsData";
 
 const CLOSE_MS = 300; // matches hr-drawer-out below
@@ -24,8 +25,22 @@ const detailValue = "text-xs leading-[1.4] text-ink";
 export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
     const [expanded, setExpanded] = useState(false);
     const [closing, setClosing] = useState(false);
+    // A short-lived link to the resume in Storage; null while loading,
+    // "" when it couldn't be made.
+    const [resumeUrl, setResumeUrl] = useState(null);
     const closeRef = useRef(null);
     const status = APPLICANT_STATUSES.find((option) => option.value === applicant.status);
+    const isPdf = applicant.resume?.toLowerCase().endsWith(".pdf");
+
+    useEffect(() => {
+        let cancelled = false;
+        applicationFileUrl(applicant.resumePath).then((result) => {
+            if (!cancelled) setResumeUrl(result.ok ? result.url : "");
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [applicant.resumePath]);
 
     useEffect(() => {
         const opener = document.activeElement;
@@ -110,18 +125,37 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     <h3 id="applicant-resume-label" className="text-base leading-[1.2] text-[#5b6676]">
                         Resume
                     </h3>
-                    <div className="relative flex flex-1 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-[#b8c2d2] bg-[#f7f9fc] p-6">
+                    <div className="relative flex flex-1 flex-col items-center justify-center gap-4 overflow-hidden rounded-xl border border-dashed border-[#b8c2d2] bg-[#f7f9fc] p-6">
+                        {/* A PDF previews in place; other files (Word) open
+                            from the file name. */}
+                        {isPdf && resumeUrl && (
+                            <iframe title={`Resume of ${applicant.name}`} src={resumeUrl} className="absolute inset-0 size-full bg-white" />
+                        )}
                         <button
                             type="button"
                             onClick={() => setExpanded((value) => !value)}
                             aria-label={expanded ? "Shrink resume preview" : "Expand resume preview"}
                             aria-pressed={expanded}
-                            className="absolute top-3 right-3 rounded p-0.5 hover:bg-surface-brand-subtle"
+                            className="absolute top-3 right-3 z-10 rounded bg-white/80 p-0.5 hover:bg-surface-brand-subtle"
                         >
                             <Image src={expandIcon} alt="" width={20} height={20} />
                         </button>
                         <Image src={fileIcon} alt="" width={32} height={32} />
-                        <p className="text-center text-base leading-[1.2] break-all text-[#5b6676]">{applicant.resume}</p>
+                        {resumeUrl ? (
+                            <a
+                                href={resumeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-center text-base leading-[1.2] break-all text-[#5b6676] hover:text-action hover:underline"
+                            >
+                                {applicant.resume}
+                            </a>
+                        ) : (
+                            <p className="text-center text-base leading-[1.2] break-all text-[#5b6676]">
+                                {applicant.resume}
+                                {resumeUrl === "" && <span className="mt-1 block text-xs text-required">The file couldn&apos;t be loaded.</span>}
+                            </p>
+                        )}
                     </div>
                 </section>
 
@@ -144,7 +178,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     <HrMenu
                         label={`Stage: ${status.label}`}
                         align="start"
-                        items={APPLICANT_STATUSES.map((option) => ({
+                        items={APPLICANT_STATUSES.filter((option) => option.value !== "withdrawn").map((option) => ({
                             label: option.label,
                             selected: option.value === applicant.status,
                             onSelect: () => onStatusChange(applicant.id, option.value),
