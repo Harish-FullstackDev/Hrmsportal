@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import chevronWhiteIcon from "@/assets/HrApplicants/icons/chevron-down-16-white.svg";
 import closeIcon from "@/assets/HrApplicants/icons/close-24.svg";
@@ -10,6 +10,8 @@ import fileIcon from "@/assets/HrApplicants/icons/file-32.svg";
 import HrMenu from "@/components/HrCommon/HrMenu";
 import { applicationFileUrl } from "@/lib/applications/actions";
 import { APPLICANT_STATUSES, formatAppliedOn, initialsOf } from "./applicantsData";
+
+const CLOSE_MS = 300; // matches hr-drawer-out below
 
 const detailLabel = "text-sm leading-[1.4] text-muted-ink";
 const detailValue = "text-xs leading-[1.4] text-ink";
@@ -51,6 +53,20 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
         return () => opener?.focus?.();
     }, []);
 
+    // Without motion there is nothing to wait for, so close at once.
+    const requestClose = useCallback(() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) onClose();
+        else setClosing(true);
+    }, [onClose]);
+
+    // Unmount once the 300ms slide-out has played. A timer rather than
+    // animationend, so the panel can never get stuck open if no animation runs.
+    useEffect(() => {
+        if (!closing) return undefined;
+        const timer = setTimeout(onClose, CLOSE_MS);
+        return () => clearTimeout(timer);
+    }, [closing, onClose]);
+
     useEffect(() => {
         const onKeyDown = (event) => {
             if (event.key !== "Escape" || event.defaultPrevented) return;
@@ -59,18 +75,17 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [onClose]);
+    }, [requestClose]);
 
     return (
         <>
             <div
                 aria-hidden="true"
                 onClick={requestClose}
-                className={`fixed inset-0 z-40 bg-black/40 ${
-                    closing
+                className={`fixed inset-0 z-40 bg-black/40 ${closing
                         ? "motion-safe:animate-[hr-fade-out_250ms_ease-in_forwards]"
                         : "motion-safe:animate-[hr-fade-in_200ms_ease-out]"
-                } ${expanded ? "" : "lg:hidden"}`}
+                    } ${expanded ? "" : "lg:hidden"}`}
             />
             {/* While closing, the shell stops making room (no
                 data-hr-side-panel), so the list widens as the panel slides
@@ -81,16 +96,16 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                 onAnimationEnd={(event) => {
                     if (closing && event.target === event.currentTarget) onClose();
                 }}
-                className={`fixed top-0 right-0 z-40 flex h-dvh max-w-full flex-col gap-8 overflow-y-auto rounded-l-2xl border border-r-0 border-[#e3e8f0] bg-white px-6 pt-[19px] pb-16 ${
-                    closing
+                className={`fixed top-0 right-0 z-40 flex h-dvh max-w-full flex-col gap-8 overflow-y-auto rounded-l-2xl border border-r-0 border-[#e3e8f0] bg-white px-6 pt-[19px] pb-16 ${closing
                         ? "pointer-events-none motion-safe:animate-[hr-drawer-out_250ms_ease-in_forwards]"
                         : "motion-safe:animate-[hr-drawer-in_300ms_ease-out]"
-                } ${expanded ? "w-[880px]" : "w-[424px]"}`}
+                    } ${expanded ? "w-[880px]" : "w-[424px]"}`}
             >
                 <div className="flex flex-col gap-[22px]">
                     <button
                         ref={closeRef}
                         type="button"
+                        onClick={requestClose}
                         onClick={requestClose}
                         aria-label="Close applicant details"
                         className="self-end rounded p-0.5 hover:bg-surface-brand-subtle"
@@ -184,6 +199,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     </HrMenu>
                     <button
                         type="button"
+                        onClick={requestClose}
                         onClick={requestClose}
                         className="h-11 flex-1 rounded-lg border border-action text-base leading-[1.2] text-action transition-colors hover:bg-surface-brand-subtle"
                     >
