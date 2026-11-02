@@ -91,6 +91,40 @@ export async function listInterviewsForHr() {
     }));
 }
 
+// Interview times shown to candidates, on India time like the HR side:
+// "Tue, 4 Nov, 2:00 pm".
+const slotFormat = new Intl.DateTimeFormat("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+});
+const MODE_LABELS = { online: "Online", in_person: "In person", phone: "Phone" };
+
+// The soonest scheduled interview that hasn't ended, in the shape
+// MyApplications' interview panel takes, or null.
+function nextInterview(interviews, now) {
+    const upcoming = (interviews ?? [])
+        .filter((item) => item.status === "scheduled")
+        .map((item) => ({ ...item, end: new Date(item.scheduled_at).getTime() + item.duration_minutes * 60_000 }))
+        .filter((item) => item.end > now)
+        .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
+    if (!upcoming) return null;
+
+    const slot = slotFormat.format(new Date(upcoming.scheduled_at));
+    return {
+        title: upcoming.title,
+        when: `${slot} · ${upcoming.duration_minutes} min · ${MODE_LABELS[upcoming.mode] ?? upcoming.mode}`,
+        slot,
+        provider: upcoming.meeting_link ? "Meeting" : null,
+        link: upcoming.meeting_link || null,
+        start: upcoming.scheduled_at,
+        end: new Date(upcoming.end).toISOString(),
+    };
+}
+
 // One job's row for the HR edit form, or null.
 export async function getJobForHr(id) {
     const supabase = await client();
@@ -108,12 +142,16 @@ export async function listMyApplications() {
     if (!user) return [];
     const { data, error } = await supabase
         .from("applications")
-        .select("id, reference, status, submitted_at, resume_name, jobs(slug, title, job_code, location, mode_of_work, department, categories)")
+        .select(
+            "id, reference, status, submitted_at, resume_name, jobs(slug, title, job_code, location, mode_of_work, department, categories), interviews(title, scheduled_at, duration_minutes, mode, meeting_link, status)",
+        )
         .eq("candidate_id", user.id)
         .order("submitted_at", { ascending: false });
     if (error) throw new Error(`Loading your applications failed: ${error.message}`);
 
+    const now = Date.now();
     return data.map((row) => ({
+        interview: nextInterview(row.interviews, now),
         id: row.id,
         reference: row.reference,
         status: row.status,
