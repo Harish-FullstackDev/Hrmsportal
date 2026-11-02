@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import chevronWhiteIcon from "@/assets/HrApplicants/icons/chevron-down-16-white.svg";
 import closeIcon from "@/assets/HrApplicants/icons/close-24.svg";
@@ -10,16 +10,20 @@ import fileIcon from "@/assets/HrApplicants/icons/file-32.svg";
 import HrMenu from "@/components/HrCommon/HrMenu";
 import { APPLICANT_STATUSES, formatAppliedOn, initialsOf } from "./applicantsData";
 
-const detailLabel = "text-sm leading-[1.4] text-muted-ink";
+const CLOSE_MS = 300; // matches hr-drawer-out below
+
+const detailLabel ="text-sm leading-[1.4] text-muted-ink";
 const detailValue = "text-xs leading-[1.4] text-ink";
 
 // Figma 2060:2170, right: the selected applicant in a 424 wide panel down the
 // right edge. On desktop it sits beside the list (the HR shell makes room for
 // anything marked data-hr-side-panel); on smaller screens, or with the resume
 // expanded, it floats over the page with a backdrop. Escape or Cancel close
-// it, and focus goes back to whatever opened it.
+// it, and focus goes back to whatever opened it. Closing plays the slide-in
+// backwards (and fades the backdrop) before the parent unmounts the panel.
 export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
     const [expanded, setExpanded] = useState(false);
+    const [closing, setClosing] = useState(false);
     const closeRef = useRef(null);
     const status = APPLICANT_STATUSES.find((option) => option.value === applicant.status);
 
@@ -29,25 +33,48 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
         return () => opener?.focus?.();
     }, []);
 
+    // Without motion there is nothing to wait for, so close at once.
+    const requestClose = useCallback(() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) onClose();
+        else setClosing(true);
+    }, [onClose]);
+
+    // Unmount once the 300ms slide-out has played. A timer rather than
+    // animationend, so the panel can never get stuck open if no animation runs.
+    useEffect(() => {
+        if (!closing) return undefined;
+        const timer = setTimeout(onClose, CLOSE_MS);
+        return () => clearTimeout(timer);
+    }, [closing, onClose]);
+
     useEffect(() => {
         const onKeyDown = (event) => {
-            if (event.key === "Escape" && !event.defaultPrevented) onClose();
+            if (event.key === "Escape" && !event.defaultPrevented) requestClose();
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [onClose]);
+    }, [requestClose]);
 
     return (
         <>
             <div
                 aria-hidden="true"
-                onClick={onClose}
-                className={`fixed inset-0 z-40 bg-black/40 motion-safe:animate-[hr-fade-in_200ms_ease-out] ${expanded ? "" : "lg:hidden"}`}
+                onClick={requestClose}
+                className={`fixed inset-0 z-40 bg-black/40 ${
+                    closing
+                        ? "motion-safe:animate-[hr-fade-out_300ms_ease-in_forwards]"
+                        : "motion-safe:animate-[hr-fade-in_200ms_ease-out]"
+                } ${expanded ? "" : "lg:hidden"}`}
             />
             <aside
                 aria-labelledby="applicant-panel-name"
-                data-hr-side-panel={expanded ? undefined : ""}
-                className={`fixed top-0 right-0 z-40 flex h-dvh max-w-full flex-col gap-8 overflow-y-auto rounded-l-2xl border border-r-0 border-[#e3e8f0] bg-white px-6 pt-[19px] pb-16 motion-safe:animate-[hr-drawer-in_300ms_ease-out] ${
+                data-hr-side-panel={expanded || closing ? undefined : ""}
+                inert={closing}
+                className={`fixed top-0 right-0 z-40 flex h-dvh max-w-full flex-col gap-8 overflow-y-auto rounded-l-2xl border border-r-0 border-[#e3e8f0] bg-white px-6 pt-[19px] pb-16 ${
+                    closing
+                        ? "motion-safe:animate-[hr-drawer-out_300ms_ease-in_forwards]"
+                        : "motion-safe:animate-[hr-drawer-in_300ms_ease-out]"
+                } ${
                     expanded ? "w-[880px]" : "w-[424px]"
                 }`}
             >
@@ -55,7 +82,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     <button
                         ref={closeRef}
                         type="button"
-                        onClick={onClose}
+                        onClick={requestClose}
                         aria-label="Close applicant details"
                         className="self-end rounded p-0.5 hover:bg-surface-brand-subtle"
                     >
@@ -129,7 +156,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     </HrMenu>
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={requestClose}
                         className="h-11 flex-1 rounded-lg border border-action text-base leading-[1.2] text-action transition-colors hover:bg-surface-brand-subtle"
                     >
                         Cancel

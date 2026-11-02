@@ -29,7 +29,7 @@ export default function HrShell({ children }) {
     return (
         <div
             data-sidebar={sidebarOpen ? "open" : "closed"}
-            className="group/hr flex min-h-dvh w-full flex-1 bg-white font-switzer text-ink lg:has-[[data-hr-side-panel]]:pr-[424px]"
+            className="group/hr flex min-h-dvh w-full flex-1 bg-white font-switzer text-ink transition-[padding] duration-300 ease-out motion-reduce:transition-none lg:has-[[data-hr-side-panel]]:pr-[424px]"
         >
             <HrSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex min-w-0 flex-1 flex-col">

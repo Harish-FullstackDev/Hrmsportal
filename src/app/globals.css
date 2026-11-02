@@ -127,6 +127,19 @@
   }
 }
 
+/* The same drawer and backdrop leaving (ApplicantPanel closing, 300ms). */
+@keyframes hr-drawer-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hr-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 /* Used by the Shimmer skeleton in components/skeletons/SkeletonPrimitives.jsx. */
 @keyframes shimmer {
   100% {
