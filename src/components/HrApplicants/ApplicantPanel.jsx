@@ -22,14 +22,10 @@ const detailValue = "text-xs leading-[1.4] text-ink";
 // expanded, it floats over the page with a backdrop. Escape or Cancel close
 // it, and focus goes back to whatever opened it.
 // It slides in, and slides back out before `onClose` runs (straight away
-// when the visitor prefers reduced motion, as no animation would end).
+// when the visitor prefers reduced motion).
 export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
     const [expanded, setExpanded] = useState(false);
     const [closing, setClosing] = useState(false);
-    const requestClose = () => {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) onClose();
-        else setClosing(true);
-    };
     // A short-lived link to the resume in Storage; null while loading,
     // "" when it couldn't be made.
     const [resumeUrl, setResumeUrl] = useState(null);
@@ -69,9 +65,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
 
     useEffect(() => {
         const onKeyDown = (event) => {
-            if (event.key !== "Escape" || event.defaultPrevented) return;
-            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) onClose();
-            else setClosing(true);
+            if (event.key === "Escape" && !event.defaultPrevented) requestClose();
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
@@ -83,7 +77,7 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                 aria-hidden="true"
                 onClick={requestClose}
                 className={`fixed inset-0 z-40 bg-black/40 ${closing
-                        ? "motion-safe:animate-[hr-fade-out_250ms_ease-in_forwards]"
+                        ? "motion-safe:animate-[hr-fade-out_300ms_ease-in_forwards]"
                         : "motion-safe:animate-[hr-fade-in_200ms_ease-out]"
                     } ${expanded ? "" : "lg:hidden"}`}
             />
@@ -93,11 +87,8 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
             <aside
                 aria-labelledby="applicant-panel-name"
                 data-hr-side-panel={expanded || closing ? undefined : ""}
-                onAnimationEnd={(event) => {
-                    if (closing && event.target === event.currentTarget) onClose();
-                }}
                 className={`fixed top-0 right-0 z-40 flex h-dvh max-w-full flex-col gap-8 overflow-y-auto rounded-l-2xl border border-r-0 border-[#e3e8f0] bg-white px-6 pt-[19px] pb-16 ${closing
-                        ? "pointer-events-none motion-safe:animate-[hr-drawer-out_250ms_ease-in_forwards]"
+                        ? "pointer-events-none motion-safe:animate-[hr-drawer-out_300ms_ease-in_forwards]"
                         : "motion-safe:animate-[hr-drawer-in_300ms_ease-out]"
                     } ${expanded ? "w-[880px]" : "w-[424px]"}`}
             >
@@ -105,7 +96,6 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     <button
                         ref={closeRef}
                         type="button"
-                        onClick={requestClose}
                         onClick={requestClose}
                         aria-label="Close applicant details"
                         className="self-end rounded p-0.5 hover:bg-surface-brand-subtle"
@@ -199,7 +189,6 @@ export default function ApplicantPanel({ applicant, onClose, onStatusChange }) {
                     </HrMenu>
                     <button
                         type="button"
-                        onClick={requestClose}
                         onClick={requestClose}
                         className="h-11 flex-1 rounded-lg border border-action text-base leading-[1.2] text-action transition-colors hover:bg-surface-brand-subtle"
                     >
