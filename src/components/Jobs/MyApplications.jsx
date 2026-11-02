@@ -2,19 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { applicationKey, useApplications, withdrawApplication } from "./candidateStorage";
+import { withdrawApplication } from "@/lib/applications/actions";
 
-// Hiring pipeline, in order. An application's status is the stage it is at;
-// any status outside this list ends the application and moves it to Withdrawn.
-const STAGES = ["Application Received", "Recruiter Screen", "Technical Portfolio Review", "Executive Panel", "Offer"];
+// Hiring pipeline, in order (values match the application_status enum). An
+// application at one of these stages is active; any other status (hired,
+// rejected, withdrawn) has ended and moves it to the Closed tab.
+const STAGES = [
+    { value: "applied", label: "Application Received" },
+    { value: "screening", label: "Screening" },
+    { value: "shortlisted", label: "Shortlisted" },
+    { value: "assessment", label: "Assessment" },
+    { value: "interviewing", label: "Interviewing" },
+    { value: "offer", label: "Offer" },
+];
+const STAGE_INDEX = Object.fromEntries(STAGES.map(({ value }, index) => [value, index]));
+const ENDED_LABELS = { hired: "Hired", rejected: "Not Selected", withdrawn: "Withdrawn" };
 
 const TABS = [
     { key: "active", label: "Active" },
-    { key: "withdrawn", label: "Withdrawn" },
+    { key: "closed", label: "Closed" },
 ];
 
-const isActive = (application) => STAGES.includes(application.status);
+const isActive = (application) => application.status in STAGE_INDEX;
 
 function formatDate(iso) {
     const date = new Date(iso);
@@ -58,54 +69,7 @@ function FileIcon() {
     );
 }
 
-function LinkIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0061af" strokeWidth="2" aria-hidden>
-            <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
-            <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
-        </svg>
-    );
-}
-
-function VideoIcon() {
-    return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" aria-hidden>
-            <rect x="3" y="6" width="13" height="12" rx="1.5" />
-            <path d="m16 10 5-3v10l-5-3" />
-        </svg>
-    );
-}
-
 const chipClass = "inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2.5 py-1 text-sm leading-[1.4] text-ink";
-
-// Shown only when the application carries a scheduled interview
-// ({ title, when, link }), which the recruiter side will supply.
-function InterviewPanel({ interview }) {
-    return (
-        <div className="flex flex-col gap-4 rounded-xl border border-[#d6e3f3] bg-[#eef3fb] p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-action">
-                    <VideoIcon />
-                </span>
-                <div className="flex flex-col gap-0.5">
-                    <p className="text-xs leading-[1.4] text-action">Meeting Link Ready</p>
-                    <p className="text-lg leading-[1.2] font-medium text-ink">Upcoming Interview: {interview.title}</p>
-                    <p className="text-sm leading-[1.4] text-ink-secondary">{interview.when}</p>
-                </div>
-            </div>
-            {interview.link && (
-                <a
-                    href={interview.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center self-start rounded-md bg-action px-4 text-sm font-medium text-white transition-colors hover:bg-[#005192] sm:self-auto"
-                >
-                    Join Meeting
-                </a>
-            )}
-        </div>
-    );
-}
 
 function ProgressPanel({ stageIndex }) {
     const previous = STAGES[stageIndex - 1];
@@ -126,22 +90,25 @@ function ProgressPanel({ stageIndex }) {
                 />
             </div>
             <div className="grid grid-cols-1 gap-1 text-[13px] leading-[1.4] sm:grid-cols-3">
-                <p className="text-ink-secondary">{previous ? `Cleared: ${previous}` : ""}</p>
-                <p className="text-action sm:text-center">Current: {STAGES[stageIndex]}</p>
-                <p className="text-ink-secondary sm:text-right">{next ? `Next: ${next}` : ""}</p>
+                <p className="text-ink-secondary">{previous ? `Cleared: ${previous.label}` : ""}</p>
+                <p className="text-action sm:text-center">Current: {STAGES[stageIndex].label}</p>
+                <p className="text-ink-secondary sm:text-right">{next ? `Next: ${next.label}` : ""}</p>
             </div>
         </div>
     );
 }
 
 // Ref "active card.png" (collapsed) and "acive card view.png" (expanded).
-function ApplicationCard({ application, job, onWithdraw }) {
+// `application` comes from listMyApplications.
+function ApplicationCard({ application, onWithdraw }) {
     const [expanded, setExpanded] = useState(false);
-    const stageIndex = STAGES.indexOf(application.status);
+    const { job } = application;
+    const stageIndex = STAGE_INDEX[application.status] ?? -1;
     const active = stageIndex !== -1;
+    const position = job?.title ?? "Position no longer listed";
 
     const location = job?.location ? `${job.location}${job.modeOfWork ? ` (${job.modeOfWork})` : ""}` : null;
-    const department = job?.categories?.[0];
+    const department = job?.department;
 
     return (
         <article className="flex flex-col gap-4 rounded-xl border border-[#e6e9ee] bg-white p-6 shadow-[0px_1px_3px_rgba(14,43,75,0.06)] sm:px-8">
@@ -150,12 +117,12 @@ function ApplicationCard({ application, job, onWithdraw }) {
                     {active ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-[#d9efe3] px-3 py-1 text-[#00a05a]">
                             <span className="size-1.5 rounded-full bg-[#00a05a]" aria-hidden />
-                            Stage {stageIndex + 1} of {STAGES.length}: {application.status}
+                            Stage {stageIndex + 1} of {STAGES.length}: {STAGES[stageIndex].label}
                         </span>
                     ) : (
                         <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 text-border-strong">
                             <span className="size-1.5 rounded-full bg-border-strong" aria-hidden />
-                            {application.status}
+                            {ENDED_LABELS[application.status] ?? application.status}
                         </span>
                     )}
                     {job?.jobCode && (
@@ -166,10 +133,10 @@ function ApplicationCard({ application, job, onWithdraw }) {
                 <h2 className="text-2xl leading-[1.2] font-medium text-ink">
                     {job ? (
                         <Link href={`/jobs/${job.slug}`} className="transition-colors hover:text-action">
-                            {application.position}
+                            {position}
                         </Link>
                     ) : (
-                        application.position
+                        position
                     )}
                 </h2>
 
@@ -195,7 +162,6 @@ function ApplicationCard({ application, job, onWithdraw }) {
 
             {expanded && (
                 <div className="flex flex-col gap-6 pt-2">
-                    {active && application.interview && <InterviewPanel interview={application.interview} />}
                     {active && <ProgressPanel stageIndex={stageIndex} />}
 
                     {/* A resume is required to apply, so the row always shows. */}
@@ -205,17 +171,6 @@ function ApplicationCard({ application, job, onWithdraw }) {
                             <FileIcon />
                             {application.resumeName || "Resume"}
                         </span>
-                        {application.portfolio && (
-                            <a
-                                href={application.portfolio}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`${chipClass} transition-colors hover:bg-[#e6e9ee]`}
-                            >
-                                <LinkIcon />
-                                Portfolio
-                            </a>
-                        )}
                     </div>
                 </div>
             )}
@@ -233,7 +188,7 @@ function ApplicationCard({ application, job, onWithdraw }) {
                     <button
                         type="button"
                         onClick={() => {
-                            if (window.confirm(`Withdraw your application for ${application.position}?`)) onWithdraw();
+                            if (window.confirm(`Withdraw your application for ${position}?`)) onWithdraw();
                         }}
                         className="inline-flex h-7 cursor-pointer items-center rounded bg-[#eef3fb] px-2.5 text-sm leading-[1.4] text-action transition-colors hover:bg-[#dbe5f0]"
                     >
@@ -245,18 +200,24 @@ function ApplicationCard({ application, job, onWithdraw }) {
     );
 }
 
-// Ref "active.png": Active / Withdrawn tabs on a white bar under the header,
-// then one full-width card per application. `jobs` is every open job, loaded
-// on the server; an application only records the position title, so its
-// location and department come from the open job of that title.
+// Ref "active.png": Active / Closed tabs on a white bar under the header,
+// then one full-width card per application. `applications` come from
+// listMyApplications, loaded on the server.
 // `embedded` (My Profile, Figma 1867:3647): the page has its own heading and
 // margins; the tabs sit on a grey rule, the open one in blue.
-export default function MyApplications({ jobs, embedded = false }) {
-    const applications = useApplications();
+export default function MyApplications({ applications, embedded = false }) {
+    const router = useRouter();
     const [tab, setTab] = useState("active");
+    const [error, setError] = useState("");
 
-    const jobsByTitle = Object.fromEntries(jobs.map((job) => [job.title, job]));
-    const visible = (applications ?? []).filter((application) => isActive(application) === (tab === "active"));
+    const visible = applications.filter((application) => isActive(application) === (tab === "active"));
+
+    const withdraw = async (id) => {
+        setError("");
+        const result = await withdrawApplication(id);
+        if (!result.ok) setError(result.error);
+        router.refresh();
+    };
 
     return (
         <>
@@ -296,12 +257,15 @@ export default function MyApplications({ jobs, embedded = false }) {
             </div>
 
             <section className={embedded ? "w-full pt-8" : "w-full px-4 pt-8 pb-16 sm:px-16"}>
-                {applications === null ? (
-                    <div className="h-[175px] w-full animate-pulse rounded-xl bg-neutral-100" aria-busy="true" />
-                ) : visible.length === 0 ? (
+                {error && (
+                    <p role="alert" className="mb-6 rounded-lg border border-required bg-[#fdf2f2] px-4 py-3 text-sm leading-5 text-required">
+                        {error}
+                    </p>
+                )}
+                {visible.length === 0 ? (
                     <div className="flex flex-col items-start gap-4 py-6">
                         <p className="text-base leading-[1.5] text-ink-secondary">
-                            {tab === "active" ? "You have no active applications." : "You have no withdrawn applications."}
+                            {tab === "active" ? "You have no active applications." : "You have no closed applications."}
                         </p>
                         {tab === "active" && (
                             <Link
@@ -314,18 +278,11 @@ export default function MyApplications({ jobs, embedded = false }) {
                     </div>
                 ) : (
                     <ul className="flex flex-col gap-6">
-                        {visible.map((application) => {
-                            const key = applicationKey(application);
-                            return (
-                                <li key={key}>
-                                    <ApplicationCard
-                                        application={application}
-                                        job={jobsByTitle[application.position]}
-                                        onWithdraw={() => withdrawApplication(key)}
-                                    />
-                                </li>
-                            );
-                        })}
+                        {visible.map((application) => (
+                            <li key={application.id}>
+                                <ApplicationCard application={application} onWithdraw={() => withdraw(application.id)} />
+                            </li>
+                        ))}
                     </ul>
                 )}
             </section>

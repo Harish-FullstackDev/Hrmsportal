@@ -12,18 +12,18 @@ import ApplyStepFooter from "@/components/Apply/ApplyStepFooter";
 import { applyStepHref, applySteps } from "@/components/Apply/applySteps";
 import { isStageComplete } from "@/components/Apply/stageCompletion";
 import { useApplyJob } from "@/components/Apply/ApplyShell";
-import { recordApplication, recordProfile } from "@/components/Jobs/candidateStorage";
+import { uploadApplicationFiles } from "@/components/Apply/uploadApplicationFiles";
+import { recordProfile } from "@/components/Jobs/candidateStorage";
 import { phoneCodeFor } from "@/components/PersonalDetails/PersonalDetailsForm";
 import ApplicationReview from "@/components/ReviewSubmit/ApplicationReview";
 import Recaptcha from "@/components/ReviewSubmit/Recaptcha";
 import { Declaration, HeardFrom, emptyReviewExtras, validateReviewExtras } from "@/components/ReviewSubmit/ReviewExtras";
-import { verifyRecaptcha } from "@/lib/recaptcha/verifyRecaptcha";
+import { submitApplication } from "@/lib/applications/actions";
 
 // Figma frame 1878:21894: stage 6 of 6. Shows every answer for a last check,
 // then asks how they heard about us and the declaration. Submit checks those
 // first, then re-checks all stages and lists any that are incomplete.
-// TODO: send the application to the backend; for now Submit only records it
-// in this browser, for My Application.
+// Submit uploads the files and saves the application to the database.
 const ReviewSubmitPage = () => {
     const job = useApplyJob();
     const { resume, resumeUrl, stepData, setStepData, submitted, reference: referenceId, completeApplication } =
@@ -32,6 +32,7 @@ const ReviewSubmitPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [captchaToken, setCaptchaToken] = useState(null);
     const [captchaError, setCaptchaError] = useState("");
+    const [submitError, setSubmitError] = useState("");
     const captchaRef = useRef(null);
     const { values, errors, handleChange, handleBack, validateNow } = useStageForm({
         slug: "review-and-submit",
@@ -52,34 +53,43 @@ const ReviewSubmitPage = () => {
         if (missing.length > 0) return;
 
         setSubmitting(true);
-        // A token is good for one check only, so a failed one is cleared and
-        // the candidate ticks the box again.
-        // TODO: verify inside the submit Server Action once the backend
-        // takes applications; checked separately here, a script can skip it.
-        const check = await verifyRecaptcha(captchaToken);
-        if (!check.ok) {
+        setSubmitError("");
+        const answers = { ...stepData, "review-and-submit": values };
+        const personal = answers["personal-details"] ?? {};
+        const phone = personal.phone ? `${phoneCodeFor(personal.phoneCode).code} ${personal.phone}` : "";
+
+        let result;
+        try {
+            // Files go straight to Storage, then the action saves the
+            // application (and checks the reCAPTCHA token on the server).
+            const files = await uploadApplicationFiles({ resume, documents: answers["upload-documents"] });
+            result = await submitApplication({ jobSlug: job.slug, captchaToken, stepData: answers, phone, ...files });
+        } catch (error) {
+            result = { ok: false, error: error.message || "Your application couldn't be submitted. Please try again." };
+        }
+
+        if (!result.ok) {
+            // A token is good for one check only, so the candidate ticks the
+            // box again before retrying.
             captchaRef.current?.reset();
-            setCaptchaError(check.error);
+            setCaptchaToken(null);
+            if (result.captcha) setCaptchaError(result.error);
+            else setSubmitError(result.error);
             setSubmitting(false);
             return;
         }
 
-        // TODO: use the reference the backend issues.
-        const reference = `ASC-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0")}`;
-        recordApplication({ id: crypto.randomUUID(), reference, position: job.title, resumeName: resume?.name });
-        const personal = stepData["personal-details"] ?? {};
-        const roles = stepData["experience-and-education"]?.workHistory ?? [];
+        // My Profile still shows contact details from this browser.
+        const roles = answers["experience-and-education"]?.workHistory ?? [];
         const latestRole = roles.find((role) => role.current === "Yes") ?? roles.at(-1);
         recordProfile({
-            phone: personal.phone ? `${phoneCodeFor(personal.phoneCode).code} ${personal.phone}` : "",
+            phone,
             location: [personal.city, personal.state, personal.country].filter(Boolean).join(", "),
             jobTitle: latestRole?.jobTitle ?? "",
             employer: latestRole?.organization ?? "",
         });
-        setTimeout(() => {
-            completeApplication(reference);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }, 600);
+        completeApplication(result.reference);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     // Figma 1878:22325: green tick tile, heading, the reference on a light
@@ -133,6 +143,12 @@ const ReviewSubmitPage = () => {
                         if (token) setCaptchaError("");
                     }}
                 />
+
+                {submitError && (
+                    <p role="alert" className="rounded-lg border border-required bg-[#fdf2f2] px-4 py-3 text-sm leading-5 text-required">
+                        {submitError}
+                    </p>
+                )}
 
                 {incomplete.length > 0 && (
                     <div role="alert" className="rounded-lg border border-required bg-[#fdf2f2] px-4 py-3 text-sm leading-5 text-required">

@@ -7,7 +7,6 @@ import phoneIcon from "@/assets/Profile/icons/phone.svg";
 import pinIcon from "@/assets/Profile/icons/pin.svg";
 import shieldIcon from "@/assets/Profile/icons/shield.svg";
 import portrait from "@/assets/Profile/portrait.jpg";
-import MyApplications from "@/components/Jobs/MyApplications";
 
 // TODO: replace with the candidate's profile once the backend serves it.
 // Copy is Figma 1867:3464's sample data.
@@ -90,9 +89,9 @@ function Identity() {
 }
 
 // Figma 1867:3464: the candidate's identity (sample data for now, see
-// PROFILE), then their real applications from My Application. `jobs` is
-// every open job, loaded on the server.
-export default function MyProfile({ jobs }) {
+// PROFILE), then their applications. `applications` is the
+// <MyApplications> list (or its loading placeholder), rendered on the server.
+export default function MyProfile({ applications }) {
     return (
         <div className="flex w-full flex-col px-4 pt-8 pb-16 sm:px-16">
             <section className="flex flex-col gap-[35px] pb-8">
@@ -106,7 +105,7 @@ export default function MyProfile({ jobs }) {
                 <PageHeading as="h2" title="My Applications">
                     Review status, upcoming interviews, and progression stages across all active opportunities.
                 </PageHeading>
-                <MyApplications jobs={jobs} embedded />
+                {applications}
             </section>
         </div>
     );

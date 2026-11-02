@@ -11,7 +11,8 @@ import HrTopBar from "./HrTopBar";
 // A page's side panel (anything marked data-hr-side-panel, fixed to the right
 // edge) gets room on desktop: the whole frame, top bar included, narrows by
 // its 424px width while it's open.
-export default function HrShell({ children }) {
+// `user` is the signed-in HR user: { name, role }.
+export default function HrShell({ user, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -33,7 +34,7 @@ export default function HrShell({ children }) {
         >
             <HrSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex min-w-0 flex-1 flex-col">
-                <HrTopBar sidebarOpen={sidebarOpen} onOpenSidebar={() => setSidebarOpen(true)} />
+                <HrTopBar user={user} sidebarOpen={sidebarOpen} onOpenSidebar={() => setSidebarOpen(true)} />
                 <main className="flex w-full flex-1 flex-col">{children}</main>
             </div>
         </div>
