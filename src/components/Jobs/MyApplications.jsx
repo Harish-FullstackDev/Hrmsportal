@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { withdrawApplication } from "@/lib/applications/actions";
+import calendarIcon from "@/assets/Profile/icons/calendar.svg";
+import clockIcon from "@/assets/Profile/icons/clock-meta.svg";
+import pinIcon from "@/assets/Profile/icons/pin-meta.svg";
+import videoCallIcon from "@/assets/Profile/icons/video-call.svg";
+import videocamIcon from "@/assets/Profile/icons/videocam.svg";
+import workIcon from "@/assets/Profile/icons/work-meta.svg";
+
+import { applicationKey, useApplications, withdrawApplication } from "./candidateStorage";
 
 // Hiring pipeline, in order (values match the application_status enum). An
 // application at one of these stages is active; any other status (hired,
@@ -33,77 +40,122 @@ function formatDate(iso) {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function PinIcon() {
+// Figma 2119:6361 icons, cut from the frame's export at their drawn size.
+function Icon({ src }) {
+    return <Image src={src} alt="" aria-hidden className="shrink-0" />;
+}
+
+const captionClass = "text-xs leading-[1.4]";
+
+// Builds a one-event .ics file so "Add to Calendar" works with any calendar
+// app. Needs the interview's start (and end) as ISO strings.
+function downloadCalendarFile(interview, position) {
+    const stamp = (iso) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Ascendus//HRMS Portal//EN",
+        "BEGIN:VEVENT",
+        `UID:${stamp(interview.start)}-${position.replace(/\W+/g, "-")}@hrms-portal`,
+        `DTSTAMP:${stamp(new Date().toISOString())}`,
+        `DTSTART:${stamp(interview.start)}`,
+        `DTEND:${stamp(interview.end ?? interview.start)}`,
+        `SUMMARY:Interview: ${interview.title} (${position})`,
+        interview.link ? `LOCATION:${interview.link}` : null,
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ].filter(Boolean);
+    const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar" }));
+    const anchor = Object.assign(document.createElement("a"), { href: url, download: "interview.ics" });
+    anchor.click();
+    URL.revokeObjectURL(url);
+}
+
+// Figma "Overlay+Border": shown only when the application carries a
+// scheduled interview ({ title, when, link?, provider?, slot?, start?, end? }),
+// which the recruiter side will supply.
+function InterviewPanel({ interview, position }) {
     return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z" />
-            <circle cx="12" cy="9.5" r="2.5" />
-        </svg>
+        <div className="flex flex-wrap items-center justify-between gap-x-[26px] gap-y-4 rounded-xl border border-card-border bg-surface-tint/70 p-5">
+            <div className="flex min-w-0 items-center gap-3.5">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-action">
+                    <Icon src={videocamIcon} />
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                    <p className={`${captionClass} text-action`}>{interview.provider ?? "Meeting"} Link Ready</p>
+                    <p className="text-lg leading-[1.2] font-medium text-ink-heading">
+                        Upcoming Interview: {interview.title}
+                    </p>
+                    <p className={`${captionClass} text-[#464555]`}>{interview.when}</p>
+                </div>
+            </div>
+            {(interview.link || interview.start) && (
+                <div className="flex flex-wrap items-center gap-3">
+                    {interview.link && (
+                        <a
+                            href={interview.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${captionClass} inline-flex items-center gap-2 rounded-lg bg-action px-4 py-2 text-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] transition-colors hover:bg-[#005192]`}
+                        >
+                            <Icon src={videoCallIcon} />
+                            Join Meeting
+                        </a>
+                    )}
+                    {interview.start && (
+                        <button
+                            type="button"
+                            onClick={() => downloadCalendarFile(interview, position)}
+                            className={`${captionClass} inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-card-border bg-white px-3 py-2 text-ink-heading transition-colors hover:bg-surface-tint`}
+                        >
+                            <Icon src={calendarIcon} />
+                            Add to Calendar
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }
 
-function BuildingIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <rect x="3" y="4" width="18" height="17" rx="1" />
-            <path d="M7 8h2M7 12h2M7 16h2M15 8h2M15 12h2M15 16h2" />
-        </svg>
-    );
-}
-
-function ClockIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 2" />
-        </svg>
-    );
-}
-
-function FileIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e5484d" strokeWidth="2" aria-hidden>
-            <rect x="4" y="3" width="13" height="16" rx="1.5" />
-            <path d="M8 8h5M8 12h5M20 7v12a2 2 0 0 1-2 2H8" />
-        </svg>
-    );
-}
-
-const chipClass = "inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2.5 py-1 text-sm leading-[1.4] text-ink";
-
-function ProgressPanel({ stageIndex }) {
+// Figma progress panel: current stage and count, the bar, then cleared / now /
+// next. The middle item shows the booked slot when there is one
+// (`interview.slot`, e.g. "Tomorrow, 2:00 PM").
+function ProgressPanel({ stageIndex, interview }) {
     const previous = STAGES[stageIndex - 1];
     const next = STAGES[stageIndex + 1];
 
     return (
-        <div className="flex flex-col gap-3 rounded-lg bg-[#eef3fb] p-4">
-            <div className="flex items-center justify-between gap-4 text-sm leading-[1.4]">
-                <p className="text-ink">Application Progress</p>
-                <p className="text-action">
+        <div className="flex flex-col gap-2 rounded-xl bg-surface-tint p-4">
+            <div className={`${captionClass} flex items-center justify-between gap-4`}>
+                <p className="text-ink-heading">{STAGES[stageIndex]}</p>
+                <p className="shrink-0 text-action">
                     Stage {stageIndex + 1} of {STAGES.length}
                 </p>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#dbe5f0]">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-rail">
                 <div
                     className="h-full rounded-full bg-action"
                     style={{ width: `${((stageIndex + 1) / STAGES.length) * 100}%` }}
                 />
             </div>
-            <div className="grid grid-cols-1 gap-1 text-[13px] leading-[1.4] sm:grid-cols-3">
-                <p className="text-ink-secondary">{previous ? `Cleared: ${previous.label}` : ""}</p>
-                <p className="text-action sm:text-center">Current: {STAGES[stageIndex].label}</p>
-                <p className="text-ink-secondary sm:text-right">{next ? `Next: ${next.label}` : ""}</p>
+            <div
+                className={`${captionClass} flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1 text-[#464555]`}
+            >
+                <p>{previous ? `Cleared: ${previous}` : "Just applied"}</p>
+                <p className="text-action">
+                    {interview?.slot ? `Scheduled: ${interview.slot}` : `Current: ${STAGES[stageIndex]}`}
+                </p>
+                <p>{next ? `Next: ${next}` : "Final stage"}</p>
             </div>
         </div>
     );
 }
 
-// Ref "active card.png" (collapsed) and "acive card view.png" (expanded).
-// `application` comes from listMyApplications.
-function ApplicationCard({ application, onWithdraw }) {
-    const [expanded, setExpanded] = useState(false);
-    const { job } = application;
-    const stageIndex = STAGE_INDEX[application.status] ?? -1;
+// Figma 2119:6361 "Application 1": stage and Job ID pills, title, meta row,
+// then the interview and progress panels, always open (no View Details).
+function ApplicationCard({ application, job, headingLevel: Title = "h2", onWithdraw }) {
+    const stageIndex = STAGES.indexOf(application.status);
     const active = stageIndex !== -1;
     const position = job?.title ?? "Position no longer listed";
 
@@ -111,26 +163,26 @@ function ApplicationCard({ application, onWithdraw }) {
     const department = job?.department;
 
     return (
-        <article className="flex flex-col gap-4 rounded-xl border border-[#e6e9ee] bg-white p-6 shadow-[0px_1px_3px_rgba(14,43,75,0.06)] sm:px-8">
-            <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-2 text-sm leading-[1.4]">
+        <article className="flex flex-col gap-6 rounded-2xl border border-card-border bg-[#f8f9fa] p-4 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] sm:p-6">
+            <div className="flex flex-col">
+                <div className={`${captionClass} flex flex-wrap items-center gap-2 pb-2`}>
                     {active ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-[#d9efe3] px-3 py-1 text-[#00a05a]">
-                            <span className="size-1.5 rounded-full bg-[#00a05a]" aria-hidden />
-                            Stage {stageIndex + 1} of {STAGES.length}: {STAGES[stageIndex].label}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-3 py-1 text-success-500">
+                            <span className="size-2 shrink-0 rounded-full bg-success-500" aria-hidden />
+                            Stage {stageIndex + 1} of {STAGES.length}: {application.status}
                         </span>
                     ) : (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 text-border-strong">
-                            <span className="size-1.5 rounded-full bg-border-strong" aria-hidden />
-                            {ENDED_LABELS[application.status] ?? application.status}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-muted-ink">
+                            <span className="size-2 shrink-0 rounded-full bg-muted-ink" aria-hidden />
+                            {application.status}
                         </span>
                     )}
                     {job?.jobCode && (
-                        <span className="rounded-full bg-[#eef2f8] px-3 py-1 text-ink-secondary">Job ID: {job.jobCode}</span>
+                        <span className="rounded-full bg-surface-tint px-2.5 py-1 text-muted-ink">Job ID: {job.jobCode}</span>
                     )}
                 </div>
 
-                <h2 className="text-2xl leading-[1.2] font-medium text-ink">
+                <Title className="text-xl leading-[1.2] font-medium capitalize text-ink-heading sm:text-2xl">
                     {job ? (
                         <Link href={`/jobs/${job.slug}`} className="transition-colors hover:text-action">
                             {position}
@@ -138,75 +190,57 @@ function ApplicationCard({ application, onWithdraw }) {
                     ) : (
                         position
                     )}
-                </h2>
+                </Title>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm leading-[1.4] text-ink-secondary">
+                <div className={`${captionClass} flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-[#464555]`}>
                     {location && (
                         <span className="flex items-center gap-1.5">
-                            <PinIcon />
+                            <Icon src={pinIcon} />
                             {location}
                         </span>
                     )}
                     {department && (
                         <span className="flex items-center gap-1.5">
-                            <BuildingIcon />
+                            <Icon src={workIcon} />
                             {department}
                         </span>
                     )}
                     <span className="flex items-center gap-1.5">
-                        <ClockIcon />
+                        <Icon src={clockIcon} />
                         Applied {formatDate(application.appliedAt)}
                     </span>
                 </div>
             </div>
 
-            {expanded && (
-                <div className="flex flex-col gap-6 pt-2">
-                    {active && <ProgressPanel stageIndex={stageIndex} />}
-
-                    {/* A resume is required to apply, so the row always shows. */}
-                    <div className="flex flex-wrap items-center gap-2 border-t border-[#e6e9ee] pt-4 text-sm leading-[1.4] text-ink-secondary">
-                        <span className="mr-1">Submitted:</span>
-                        <span className={chipClass}>
-                            <FileIcon />
-                            {application.resumeName || "Resume"}
-                        </span>
-                    </div>
-                </div>
+            {active && application.interview && (
+                <InterviewPanel interview={application.interview} position={application.position} />
             )}
+            {active && <ProgressPanel stageIndex={stageIndex} interview={application.interview} />}
 
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Not in Figma: kept so an application can still be withdrawn. */}
+            {active && (
                 <button
                     type="button"
-                    aria-expanded={expanded}
-                    onClick={() => setExpanded((value) => !value)}
-                    className="inline-flex h-7 cursor-pointer items-center rounded bg-action px-2.5 text-sm leading-[1.4] text-white transition-colors hover:bg-[#005192]"
+                    onClick={() => {
+                        if (window.confirm(`Withdraw your application for ${application.position}?`)) onWithdraw();
+                    }}
+                    className={`${captionClass} -mt-2 cursor-pointer self-start text-muted-ink underline-offset-4 transition-colors hover:text-action hover:underline`}
                 >
-                    {expanded ? "View less" : "View Details"}
+                    Withdraw application
                 </button>
-                {active && (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (window.confirm(`Withdraw your application for ${position}?`)) onWithdraw();
-                        }}
-                        className="inline-flex h-7 cursor-pointer items-center rounded bg-[#eef3fb] px-2.5 text-sm leading-[1.4] text-action transition-colors hover:bg-[#dbe5f0]"
-                    >
-                        Withdraw
-                    </button>
-                )}
-            </div>
+            )}
         </article>
     );
 }
 
-// Ref "active.png": Active / Closed tabs on a white bar under the header,
-// then one full-width card per application. `applications` come from
-// listMyApplications, loaded on the server.
-// `embedded` (My Profile, Figma 1867:3647): the page has its own heading and
-// margins; the tabs sit on a grey rule, the open one in blue.
-export default function MyApplications({ applications, embedded = false }) {
-    const router = useRouter();
+// Ref "active.png": Active / Withdrawn tabs on a white bar under the header,
+// then one full-width card per application. `jobs` is every open job, loaded
+// on the server; an application only records the position title, so its
+// location and department come from the open job of that title.
+// `embedded` (My Profile, Figma 2119:6361): the page has its own heading and
+// margins; the tabs sit 12 above a grey rule, the open one in blue.
+export default function MyApplications({ jobs, embedded = false }) {
+    const applications = useApplications();
     const [tab, setTab] = useState("active");
     const [error, setError] = useState("");
 
@@ -224,7 +258,7 @@ export default function MyApplications({ applications, embedded = false }) {
             <div
                 className={
                     embedded
-                        ? "border-b border-border-default bg-white px-4 sm:px-8"
+                        ? "border-b border-border-default bg-white py-3"
                         : "w-full bg-white px-4 shadow-[0px_4px_8px_rgba(0,0,0,0.06)] sm:px-16"
                 }
             >
@@ -239,15 +273,14 @@ export default function MyApplications({ applications, embedded = false }) {
                                 role="tab"
                                 aria-selected={selected}
                                 onClick={() => setTab(item.key)}
-                                className={`cursor-pointer border-b-2 px-1 py-4 text-lg leading-[1.2] transition-colors ${
-                                    embedded
+                                className={`cursor-pointer text-lg leading-[1.2] transition-colors ${embedded
                                         ? selected
-                                            ? "border-action font-medium text-action"
-                                            : "border-transparent font-medium text-muted-ink hover:text-ink-secondary"
-                                        : selected
-                                          ? "border-ink font-medium text-ink"
-                                          : "border-transparent text-border-strong hover:text-ink-secondary"
-                                }`}
+                                            ? "font-medium text-action"
+                                            : "font-medium text-muted-ink hover:text-ink-secondary"
+                                        : `border-b-2 px-1 py-4 ${selected
+                                            ? "border-ink font-medium text-ink"
+                                            : "border-transparent text-border-strong hover:text-ink-secondary"}`
+                                    }`}
                             >
                                 {item.label}
                             </button>
@@ -278,11 +311,19 @@ export default function MyApplications({ applications, embedded = false }) {
                     </div>
                 ) : (
                     <ul className="flex flex-col gap-6">
-                        {visible.map((application) => (
-                            <li key={application.id}>
-                                <ApplicationCard application={application} onWithdraw={() => withdraw(application.id)} />
-                            </li>
-                        ))}
+                        {visible.map((application) => {
+                            const key = applicationKey(application);
+                            return (
+                                <li key={key}>
+                                    <ApplicationCard
+                                        application={application}
+                                        job={jobsByTitle[application.position]}
+                                        headingLevel={embedded ? "h3" : "h2"}
+                                        onWithdraw={() => withdrawApplication(key)}
+                                    />
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
             </section>
