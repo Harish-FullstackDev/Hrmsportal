@@ -8,6 +8,9 @@ import HrTopBar from "./HrTopBar";
 // Shared frame of the HR pages: the sidebar (closed by default, Figma
 // 1898:5288; open, Figma 1905:1303), the top bar, then the page. It lives in
 // the /hr layout, so the sidebar stays open or closed across HR pages.
+// A page's side panel (anything marked data-hr-side-panel, fixed to the right
+// edge) gets room on desktop: the whole frame, top bar included, narrows by
+// its 424px width while it's open.
 export default function HrShell({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -26,7 +29,7 @@ export default function HrShell({ children }) {
     return (
         <div
             data-sidebar={sidebarOpen ? "open" : "closed"}
-            className="group/hr flex min-h-dvh w-full flex-1 bg-white font-switzer text-ink"
+            className="group/hr flex min-h-dvh w-full flex-1 bg-white font-switzer text-ink lg:has-[[data-hr-side-panel]]:pr-[424px]"
         >
             <HrSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex min-w-0 flex-1 flex-col">

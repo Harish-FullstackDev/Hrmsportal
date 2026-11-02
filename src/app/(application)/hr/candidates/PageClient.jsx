@@ -1,7 +1,7 @@
-import Candidates from "@/components/HrCandidates/Candidates";
+import Applicants from "@/components/HrApplicants/Applicants";
 
 const PageClient = () => {
-    return <Candidates />;
+    return <Applicants />;
 };
 
 export default PageClient;

@@ -67,7 +67,7 @@ export const experiencedLabels = {
     servingNotice: "Currently Serving Notice Period?",
     noticePeriod: "Notice Period",
     canShorten: "Can Your Notice Period be Shortened?",
-    currentSalary: "Current Annual Salary",
+    currentSalary: "Current / Last Drawn Annual Salary",
     expectedSalary: "Expected Annual Salary",
 };
 
@@ -96,6 +96,11 @@ const REQUIRED = {
 
 const isEmpty = (value) => (Array.isArray(value) ? value.length === 0 : !String(value ?? "").trim());
 
+// The notice questions apply only to someone in a job now: one of their saved
+// roles has Current Employment "Yes". Otherwise they are hidden, not asked,
+// and left off the review (any earlier answers stay saved but unused).
+export const hasCurrentRole = (values) => (values.workHistory ?? []).some((role) => role.current === "Yes");
+
 // Returns { field: message } for every invalid field; the level's questions
 // count only for the chosen level.
 export function validateExperienceEducation(values) {
@@ -108,8 +113,8 @@ export function validateExperienceEducation(values) {
     }
     if (isExperienced(values.relevantExperience)) {
         if (isEmpty(values.workHistory)) errors.workHistory = "Add at least one role.";
-        if (isEmpty(values.servingNotice)) errors.servingNotice = "Select an option.";
-        if (values.servingNotice === "Yes") {
+        if (hasCurrentRole(values) && isEmpty(values.servingNotice)) errors.servingNotice = "Select an option.";
+        if (hasCurrentRole(values) && values.servingNotice === "Yes") {
             if (isEmpty(values.noticePeriod)) errors.noticePeriod = "Select your notice period.";
             if (isEmpty(values.canShorten)) errors.canShorten = "Select an option.";
         }
@@ -138,8 +143,10 @@ export function experienceSummary(values) {
     ];
     if (!isExperienced(values.relevantExperience)) return rows;
 
-    const shown = ["servingNotice", "noticePeriod", "currentSalary", "expectedSalary", "workHistory"];
-    if (values.servingNotice === "Yes") shown.splice(2, 0, "canShorten");
+    const shown = hasCurrentRole(values)
+        ? ["servingNotice", "noticePeriod", "currentSalary", "expectedSalary", "workHistory"]
+        : ["currentSalary", "expectedSalary", "workHistory"];
+    if (hasCurrentRole(values) && values.servingNotice === "Yes") shown.splice(2, 0, "canShorten");
     // As on the form: the notice period is optional unless serving notice.
     const labels = {
         ...experiencedLabels,
@@ -228,6 +235,7 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
     );
 
     const experienced = isExperienced(values.relevantExperience);
+    const currentlyEmployed = hasCurrentRole(values);
     const salary = (field, required) => (
         <div
             ref={(node) => {
@@ -239,10 +247,10 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                     {...control(field)}
                     inputMode="decimal"
                     placeholder="Enter CTC in LPA"
-                    // Lakhs per annum: digits with up to two decimals.
+                    // Lakhs per annum: up to two digits (99 LPA) with up to two decimals.
                     onChange={(event) => {
                         const next = event.target.value.replace(/[^\d.]/g, "");
-                        if (/^\d{0,4}(\.\d{0,2})?$/.test(next)) setValue(field, next);
+                        if (/^\d{0,2}(\.\d{0,2})?$/.test(next)) setValue(field, next);
                     }}
                 />
             </ApplyField>
@@ -337,26 +345,32 @@ export default function ExperienceEducationForm({ values, errors, onChange }) {
                             />
                             {/* Relative: the salary slide measures against this grid. */}
                             <div className="relative grid gap-x-8 gap-y-6 lg:grid-cols-3">
-                                <ChoiceField
-                                    field="servingNotice"
-                                    label={experiencedLabels.servingNotice}
-                                    options={yesNo}
-                                    value={values.servingNotice}
-                                    error={errors.servingNotice}
-                                    onChange={setServingNotice}
-                                />
-                                <ChoiceField
-                                    field="noticePeriod"
-                                    // Optional unless they are serving notice now.
-                                    label={values.servingNotice === "Yes" ? "Notice Period" : "If Notice Period Applicable"}
-                                    required={values.servingNotice === "Yes"}
-                                    options={noticePeriods}
-                                    value={values.noticePeriod}
-                                    error={errors.noticePeriod}
-                                    onChange={(next) => setValue("noticePeriod", next)}
-                                    className="lg:col-span-2"
-                                />
-                                {values.servingNotice === "Yes" && (
+                                {/* Only for someone employed now (hasCurrentRole). */}
+                                {currentlyEmployed && (
+                                    <>
+                                        <ChoiceField
+                                            field="servingNotice"
+                                            label={experiencedLabels.servingNotice}
+                                            options={yesNo}
+                                            value={values.servingNotice}
+                                            error={errors.servingNotice}
+                                            onChange={setServingNotice}
+                                            className="motion-safe:animate-[apply-fade-in_200ms_ease-out_backwards]"
+                                        />
+                                        <ChoiceField
+                                            field="noticePeriod"
+                                            // Optional unless they are serving notice now.
+                                            label={values.servingNotice === "Yes" ? "Notice Period" : "If Notice Period Applicable"}
+                                            required={values.servingNotice === "Yes"}
+                                            options={noticePeriods}
+                                            value={values.noticePeriod}
+                                            error={errors.noticePeriod}
+                                            onChange={(next) => setValue("noticePeriod", next)}
+                                            className="motion-safe:animate-[apply-fade-in_200ms_ease-out_backwards] lg:col-span-2"
+                                        />
+                                    </>
+                                )}
+                                {currentlyEmployed && values.servingNotice === "Yes" && (
                                     <ChoiceField
                                         field="canShorten"
                                         label={experiencedLabels.canShorten}

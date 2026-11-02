@@ -1,7 +1,7 @@
 import PageClient from "./PageClient";
 
 export const metadata = {
-    title: "Candidates · HRMS Portal",
+    title: "Applicants · HRMS Portal",
 };
 
 export default function Page() {

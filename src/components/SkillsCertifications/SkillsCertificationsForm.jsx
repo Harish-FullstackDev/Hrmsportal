@@ -33,12 +33,37 @@ const linkId = (index) => `workLink-${index}`;
 
 const URL_PATTERN = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
 
+// A link reduced to what identifies it, so "https://www.github.com/me/" and
+// "github.com/me" count as the same: no scheme, no "www.", no trailing slash,
+// case ignored.
+const comparableLink = (url) =>
+    url
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/+$/, "");
+
 // Returns { field: message } for every invalid field; empty when valid.
+// Each link can be given once only, under any type: a repeat is marked on the
+// later row.
 export function validateSkillsCertifications(values) {
     const errors = {};
     if (!(values.skills?.length > 0)) errors.skills = "Add at least one skill.";
+    const seen = new Map();
     workLinks(values).forEach((link, index) => {
-        if (link.url.trim() && !URL_PATTERN.test(link.url.trim())) errors[linkId(index)] = "Enter a valid link.";
+        const url = link.url.trim();
+        if (!url) return;
+        if (!URL_PATTERN.test(url)) {
+            errors[linkId(index)] = "Enter a valid link.";
+            return;
+        }
+        const key = comparableLink(url);
+        if (seen.has(key)) {
+            errors[linkId(index)] = `This link is already added as ${seen.get(key)}.`;
+        } else {
+            seen.set(key, link.type);
+        }
     });
     return errors;
 }

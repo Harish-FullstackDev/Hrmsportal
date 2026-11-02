@@ -59,6 +59,7 @@ const DECLARATIONS = [
     },
     {
         field: "contactConsent",
+        required: true,
         text: [
             "I agree that Ascendus may contact me about my application by phone, SMS, WhatsApp or email, using the mobile number and email address I have provided.",
         ],

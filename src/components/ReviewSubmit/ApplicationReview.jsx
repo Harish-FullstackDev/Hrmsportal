@@ -185,11 +185,10 @@ export default function ApplicationReview({ resume, resumeUrl, data }) {
                         </>
                     ))}
                 />
-                {/* Figma 1947:13893: skills over three of five columns, then
-                    each work link under its own type: the first two beside
-                    the skills, the rest five to a row below. */}
+                {/* Figma 1947:13893: skills across the full row, then each work
+                    link under its own type on the rows below, five to a row. */}
                 <dl className="grid w-full gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-5">
-                    <ReviewTags as="dl-item" label="Skills" items={skills.skills ?? []} className="md:col-span-2 lg:col-span-3" />
+                    <ReviewTags as="dl-item" label="Skills" items={skills.skills ?? []} className="md:col-span-2 lg:col-span-5" />
                     {links.map((link, index) => (
                         <ReviewField
                             key={`${link.type}-${index}`}
