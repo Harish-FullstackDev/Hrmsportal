@@ -1,9 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import arrowLeftIcon from "@/assets/HrJobForm/icons/arrow-left-16.svg";
 import chevronIcon from "@/assets/HrJobForm/icons/chevron-down-16.svg";
@@ -187,56 +185,85 @@ function ListField({ id, label, addLabel, value, onChange, error }) {
     );
 }
 
-// Figma "Add Job Form": create a job, or edit one (`jobId` and `initial`).
-// Three columns on desktop: the ID, title and department, then the
-// employment type, work mode and openings; under them the summary, duties and
-// qualifications across two columns beside the location, closing date,
-// experience and skills. Save as Draft needs only a title; Publish checks
-// everything and puts the job on the careers pages.
-export default function JobForm({ jobId, jobCode, initial = emptyJob }) {
-    const router = useRouter();
+// Figma "Add Job Form": create a job, or edit one (`jobId`, `jobCode`, its
+// current `status` and `initial` values). Three columns on desktop: the ID,
+// title and department, then the employment type, work mode and openings;
+// under them the summary, duties and qualifications across two columns beside
+// the location, closing date, experience and skills. Save as Draft needs only
+// a title; Publish checks everything and puts the job on the careers pages.
+// Shown in JobFormDialog: Back calls `onCancel`, a save calls `onSaved`, and
+// `dirtyRef` tells the dialog whether there are unsaved changes.
+// `heading` overrides the title ("Duplicate ASC-2026-001").
+export default function JobForm({ jobId, jobCode, status, heading, initial = emptyJob, onCancel, onSaved, dirtyRef }) {
     const [values, setValues] = useState(initial);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(null); // "draft" | "publish" | null
     const [formError, setFormError] = useState("");
+    const published = status === "published";
+
+    const dirty = JSON.stringify(values) !== JSON.stringify(initial);
+    useEffect(() => {
+        if (dirtyRef) dirtyRef.current = dirty;
+    }, [dirty, dirtyRef]);
 
     const set = (field) => (value) => {
         setValues((current) => ({ ...current, [field]: value }));
         if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }));
     };
 
+    // Moves focus to the first field with an error (in the form's order).
+    const focusFirstError = (found) => {
+        const first = Object.keys(emptyJob).find((field) => found[field]);
+        document.getElementById(first)?.focus();
+    };
+
     const save = async (publish) => {
         if (saving) return;
+        // Taking a live job off the careers pages deserves a check.
+        if (!publish && published && !window.confirm("Save as draft? The job will be taken off the careers pages until you publish it again.")) {
+            return;
+        }
         setFormError("");
         const found = validateJob(values, { publish, today: todayIso() });
         setErrors(found);
         if (Object.keys(found).length > 0) {
-            document.getElementById(Object.keys(found)[0])?.focus();
+            setFormError(publish ? "Please fix the highlighted fields before publishing." : "");
+            focusFirstError(found);
             return;
         }
 
         setSaving(publish ? "publish" : "draft");
-        const result = await saveJob({ id: jobId, values, publish });
+        let result;
+        try {
+            result = await saveJob({ id: jobId, values, publish });
+        } catch {
+            result = { ok: false, error: "The job couldn't be saved. Check your connection and try again." };
+        }
         if (!result.ok) {
             setSaving(null);
-            if (result.errors) setErrors(result.errors);
-            setFormError(result.error ?? "Please check the highlighted fields.");
+            if (result.errors) {
+                setErrors(result.errors);
+                focusFirstError(result.errors);
+            }
+            setFormError(result.error ?? "Please fix the highlighted fields.");
             return;
         }
-        router.push("/hr/job-openings");
-        router.refresh();
+        onSaved?.();
     };
 
     return (
         <form
             noValidate
+            aria-labelledby="job-form-title"
             onSubmit={(event) => {
                 event.preventDefault();
                 save(true);
             }}
-            className="mx-4 my-8 flex max-w-[1152px] flex-col gap-8 rounded-xl bg-white p-6 shadow-[0_1px_3px_rgba(14,43,75,0.08)] sm:mx-8"
+            className="flex flex-col gap-8 p-6"
         >
-            <h1 className="text-base leading-[1.2] font-medium text-ink">{jobId ? "Edit Job" : "Create Job"}</h1>
+            <h2 id="job-form-title" className="text-base leading-[1.2] font-medium text-ink">
+                {heading ?? (jobId ? "Edit Job" : "Create Job")}
+            </h2>
 
             <div className="grid gap-x-[33px] gap-y-8 lg:grid-cols-3">
                 <Field id="jobCode" label="Job ID">
@@ -423,13 +450,15 @@ export default function JobForm({ jobId, jobCode, initial = emptyJob }) {
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-4">
-                <Link
-                    href="/hr/job-openings"
-                    className="flex h-[31px] items-center gap-2 rounded-lg bg-surface-brand-subtle px-3.5 text-base leading-[1.2] text-ink transition-colors hover:bg-primary-100"
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={Boolean(saving)}
+                    className="flex h-[31px] items-center gap-2 rounded-lg bg-surface-brand-subtle px-3.5 text-base leading-[1.2] text-ink transition-colors hover:bg-primary-100 disabled:opacity-60"
                 >
                     <Image src={arrowLeftIcon} alt="" width={16} height={16} />
                     Back
-                </Link>
+                </button>
                 <div className="flex items-center gap-9">
                     <button
                         type="button"
@@ -437,14 +466,14 @@ export default function JobForm({ jobId, jobCode, initial = emptyJob }) {
                         disabled={Boolean(saving)}
                         className="text-base leading-[1.2] text-ink-secondary transition-colors hover:text-ink disabled:opacity-60"
                     >
-                        {saving === "draft" ? "Saving…" : "Save as Draft"}
+                        {saving === "draft" ? "Saving…" : published ? "Unpublish & Save as Draft" : "Save as Draft"}
                     </button>
                     <button
                         type="submit"
-                        disabled={Boolean(saving)}
+                        disabled={Boolean(saving) || (published && !dirty)}
                         className="flex h-[31px] items-center rounded-lg bg-action px-3 text-base leading-[1.2] text-white transition-colors hover:bg-primary disabled:opacity-60"
                     >
-                        {saving === "publish" ? "Publishing…" : "Publish"}
+                        {saving === "publish" ? "Saving…" : published ? "Save Changes" : "Publish"}
                     </button>
                 </div>
             </div>

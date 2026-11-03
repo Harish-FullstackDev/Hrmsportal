@@ -23,7 +23,7 @@ export default function DashboardToolbar() {
                     Modify your Dashboard
                 </button>
                 <Link
-                    href="/hr/job-openings/new"
+                    href="/hr/job-openings?new=1"
                     className="flex h-10 items-center gap-2 rounded bg-action px-4 text-sm leading-[1.4] whitespace-nowrap text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition-colors hover:bg-primary"
                 >
                     <Image src={plusIcon} alt="" className="size-[9.333px]" />

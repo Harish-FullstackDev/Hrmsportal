@@ -16,7 +16,7 @@ import { withdrawApplication } from "@/lib/applications/actions";
 
 // Hiring pipeline, in order (values match the application_status enum). An
 // application at one of these stages is active; any other status (hired,
-// rejected, withdrawn) has ended and moves it to the Closed tab.
+// rejected, withdrawn) has ended and moves it to the Withdrawn tab (as in the design).
 const STAGES = [
     { value: "applied", label: "Application Received" },
     { value: "screening", label: "Screening" },
@@ -30,7 +30,7 @@ const ENDED_LABELS = { hired: "Hired", rejected: "Not Selected", withdrawn: "Wit
 
 const TABS = [
     { key: "active", label: "Active" },
-    { key: "closed", label: "Closed" },
+    { key: "withdrawn", label: "Withdrawn" },
 ];
 
 const isActive = (application) => application.status in STAGE_INDEX;
@@ -238,7 +238,7 @@ function ApplicationCard({ application, headingLevel: Title = "h2", onWithdraw }
     );
 }
 
-// Ref "active.png": Active / Closed tabs on a white bar under the header,
+// Ref "active.png": Active / Withdrawn tabs on a white bar under the header,
 // then one full-width card per application. `applications` come from
 // listMyApplications, loaded on the server.
 // `embedded` (My Profile, Figma 2119:6361): the page has its own heading and
@@ -302,7 +302,7 @@ export default function MyApplications({ applications, embedded = false }) {
                 {visible.length === 0 ? (
                     <div className="flex flex-col items-start gap-4 py-6">
                         <p className="text-base leading-[1.5] text-ink-secondary">
-                            {tab === "active" ? "You have no active applications." : "You have no closed applications."}
+                            {tab === "active" ? "You have no active applications." : "You have no withdrawn applications."}
                         </p>
                         {tab === "active" && (
                             <Link

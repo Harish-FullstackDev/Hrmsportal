@@ -28,8 +28,19 @@ export const emptyJob = {
 };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const HAS_LETTER = /\p{L}/u;
+// How far ahead a closing date may be.
+export const MAX_DAYS_OPEN = 365;
 
 const filled = (items) => (Array.isArray(items) ? items.map((item) => String(item).trim()).filter(Boolean) : []);
+
+// A real calendar date (rejects 2026-02-30), as an ISO string.
+const isRealDate = (iso) => ISO_DATE.test(iso) && new Date(`${iso}T00:00:00Z`).toISOString().slice(0, 10) === iso;
+
+// `iso` plus `days`, as an ISO date.
+const addDays = (iso, days) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+const hasDuplicates = (items) => new Set(items.map((item) => item.toLowerCase())).size !== items.length;
 
 // Returns { field: message } for every invalid field; empty when valid.
 // A draft only needs a title; publishing needs everything. `today` is an ISO
@@ -37,7 +48,9 @@ const filled = (items) => (Array.isArray(items) ? items.map((item) => String(ite
 export function validateJob(values, { publish, today }) {
     const errors = {};
     const title = String(values.title ?? "").trim();
-    if (title.length < 2 || title.length > 120) errors.title = "Enter a job title (2–120 characters).";
+    if (title.length < 2 || title.length > 120 || !HAS_LETTER.test(title)) errors.title = "Enter a job title (2–120 characters).";
+    // A draft may be half filled, but what is there must still be valid.
+    if (values.closingDate && !isRealDate(values.closingDate)) errors.closingDate = "Pick a valid date.";
     if (!publish) return errors;
 
     if (!DEPARTMENTS.includes(values.department)) errors.department = "Select a department.";
@@ -49,17 +62,22 @@ export function validateJob(values, { publish, today }) {
     const summary = String(values.summary ?? "").trim();
     if (summary.length < 20 || summary.length > 3000) errors.summary = "Write a summary of 20 to 3000 characters.";
     const location = String(values.location ?? "").trim();
-    if (location.length < 2 || location.length > 120) errors.location = "Enter the job location.";
+    if (location.length < 2 || location.length > 120 || !HAS_LETTER.test(location)) errors.location = "Enter the job location.";
 
     for (const field of ["responsibilities", "qualifications"]) {
         const items = filled(values[field]);
         if (items.length === 0) errors[field] = "Add at least one.";
         else if (items.length > MAX_LIST_ITEMS) errors[field] = `Add at most ${MAX_LIST_ITEMS}.`;
         else if (items.some((item) => item.length > 300)) errors[field] = "Keep each one under 300 characters.";
+        else if (items.some((item) => item.length < 3)) errors[field] = "Each one needs at least 3 characters.";
+        else if (hasDuplicates(items)) errors[field] = "Remove the repeated entry.";
     }
 
-    if (!ISO_DATE.test(values.closingDate ?? "")) errors.closingDate = "Pick a closing date.";
-    else if (values.closingDate < today) errors.closingDate = "The closing date can't be in the past.";
+    if (!errors.closingDate) {
+        if (!values.closingDate) errors.closingDate = "Pick a closing date.";
+        else if (values.closingDate < today) errors.closingDate = "The closing date can't be in the past.";
+        else if (values.closingDate > addDays(today, MAX_DAYS_OPEN)) errors.closingDate = "Pick a date within the next year.";
+    }
 
     if (!EXPERIENCE_LEVELS.includes(values.experienceLevel)) errors.experienceLevel = "Select an experience level.";
     if (values.experienceLevel === "Experienced") {
@@ -89,7 +107,7 @@ export function jobRow(values) {
         location: String(values.location ?? "").trim().slice(0, 120),
         responsibilities: filled(values.responsibilities).slice(0, MAX_LIST_ITEMS),
         qualifications: filled(values.qualifications).slice(0, MAX_LIST_ITEMS),
-        closes_on: ISO_DATE.test(values.closingDate ?? "") ? values.closingDate : null,
+        closes_on: isRealDate(values.closingDate ?? "") ? values.closingDate : null,
         experience_level: EXPERIENCE_LEVELS.includes(values.experienceLevel) ? values.experienceLevel : "",
         min_experience_years: experienced && values.minYears !== "" ? Number.parseInt(values.minYears, 10) || null : null,
         skills: filled(values.skills).slice(0, MAX_JOB_SKILLS),

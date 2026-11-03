@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 // A button that opens a list of actions (Figma 1983:9165: white, rounded 8,
@@ -30,9 +30,34 @@ export default function HrMenu({ label, items, align = "end", className = "", me
         });
     };
 
+    // Once the list is drawn, keep it on screen: if it would run past the
+    // bottom of the window, open it above the button instead (where there's
+    // more room), and cap its height to the room it has, scrolling inside.
+    useLayoutEffect(() => {
+        if (!open || position.placed) return;
+        const list = listRef.current;
+        const button = buttonRef.current?.getBoundingClientRect();
+        if (!list || !button) return;
+        const margin = 8;
+        const below = window.innerHeight - button.bottom - 4 - margin;
+        const above = button.top - 4 - margin;
+        const height = list.scrollHeight;
+        const horizontal = align === "end" ? { right: position.right } : { left: position.left };
+        if (height <= below || below >= above) {
+            setPosition({ top: button.bottom + 4, ...horizontal, maxHeight: below, placed: true });
+        } else {
+            setPosition({ bottom: window.innerHeight - button.top + 4, ...horizontal, maxHeight: above, placed: true });
+        }
+    }, [open, position, align]);
+
+    // Focus the first item once the list is placed (a hidden one can't take focus).
+    const placed = Boolean(position?.placed);
+    useEffect(() => {
+        if (placed) listRef.current?.querySelector("[role=menuitem], [role=menuitemradio]")?.focus();
+    }, [placed]);
+
     useEffect(() => {
         if (!open) return;
-        listRef.current?.querySelector("[role=menuitem], [role=menuitemradio]")?.focus();
 
         const onPointerDown = (event) => {
             if (!listRef.current?.contains(event.target) && !buttonRef.current?.contains(event.target)) close(false);
@@ -85,8 +110,16 @@ export default function HrMenu({ label, items, align = "end", className = "", me
                         role="menu"
                         aria-label={label}
                         onKeyDown={onKeyDown}
-                        style={position}
-                        className={`fixed z-50 flex min-w-[169px] flex-col rounded-lg bg-white py-[7.5px] shadow-[0_1px_5.3px_rgba(0,0,0,0.25)] ${menuClassName}`}
+                        style={{
+                            top: position.top,
+                            bottom: position.bottom,
+                            left: position.left,
+                            right: position.right,
+                            maxHeight: position.maxHeight,
+                            // Hidden until placed, so it never flashes off screen.
+                            visibility: position.placed ? undefined : "hidden",
+                        }}
+                        className={`fixed z-50 flex min-w-[169px] flex-col overflow-y-auto rounded-lg bg-white py-[7.5px] shadow-[0_1px_5.3px_rgba(0,0,0,0.25)] ${menuClassName}`}
                     >
                         {items.map((item) => (
                             <button
