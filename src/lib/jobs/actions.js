@@ -5,12 +5,43 @@
 // checks the role again in the database.
 
 import { updateTag } from "next/cache";
+import { after } from "next/server";
 
 import { hrSession } from "@/lib/auth/hr";
+import { requestOrigin, sendJobPublishedEmail, sendQuietly } from "@/lib/email/hiringEmails";
 import { JOBS_TAG } from "@/lib/jobs";
 import { emptyJob, jobRow, jobValues, todayIso, validateJob } from "@/lib/jobs/jobForm";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Emails every HR account that job `jobId` just went live. Only called when
+// a job moves into "published" (not when a live job is edited). The send runs
+// after the response; a failure is logged, never returned.
+async function notifyJobPublished(session, jobId) {
+    const origin = await requestOrigin();
+    after(() =>
+        sendQuietly("Job published", async () => {
+            const [{ data: job }, { data: hr }] = await Promise.all([
+                session.supabase.from("jobs").select("*").eq("id", jobId).maybeSingle(),
+                session.supabase.from("profiles").select("email").eq("role", "hr"),
+            ]);
+            if (!job || job.status !== "published") return;
+            const recipients = [...new Set((hr ?? []).map((row) => row.email).filter(Boolean))];
+            await sendJobPublishedEmail({ recipients, job, publishedBy: session.profile, origin });
+        }),
+    );
+}
+
+// The job ID a new job will get when saved, for the Create Job form:
+// { ok: true, code } or { ok: false }. A preview only; the database assigns
+// the real ID on insert.
+export async function previewNextJobCode() {
+    const session = await hrSession();
+    if (!session) return { ok: false };
+    const { data, error } = await session.supabase.rpc("peek_next_job_code");
+    if (error || typeof data !== "string") return { ok: false };
+    return { ok: true, code: data };
+}
 
 // One job, as the edit form takes it: { ok: true, job: { id, code, status,
 // values } } or { ok: false, error }.
@@ -49,6 +80,7 @@ export async function setJobStatus(id, status) {
     const { error } = await session.supabase.from("jobs").update({ status }).eq("id", id);
     if (error) return { ok: false, error: "The job couldn't be updated. Please try again." };
     updateTag(JOBS_TAG);
+    if (status === "published") await notifyJobPublished(session, id);
     return { ok: true };
 }
 
@@ -95,17 +127,26 @@ export async function saveJob({ id, values, publish }) {
     const errors = validateJob(clean, { publish: Boolean(publish), today: todayIso() });
     if (Object.keys(errors).length > 0) return { ok: false, errors };
 
+    // Whether this save takes the job live (a new job, or one that wasn't
+    // published before), which emails HR.
+    let goesLive = Boolean(publish);
+    if (publish && id) {
+        const { data: before } = await session.supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+        goesLive = before?.status !== "published";
+    }
+
     const row = { ...jobRow(clean), status: publish ? "published" : "draft" };
     const query = id
         ? session.supabase.from("jobs").update(row).eq("id", id)
         : session.supabase.from("jobs").insert(row);
     const { data, error } = await query.select("id").maybeSingle();
     if (error || !data) {
-        console.error("saveJob:", error);
+        console.error("saveJob:", error?.code, error?.message ?? "no row returned");
         return { ok: false, error: "The job couldn't be saved. Please try again." };
     }
 
     // The careers pages cache published jobs; show the change straight away.
     updateTag(JOBS_TAG);
+    if (goesLive) await notifyJobPublished(session, data.id);
     return { ok: true, id: data.id };
 }

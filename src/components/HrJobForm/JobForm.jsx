@@ -13,7 +13,7 @@ import trashIcon from "@/assets/HrJobForm/icons/trash-16.svg";
 import { ApplyTagPicker } from "@/components/Apply/ApplyCombobox";
 import ChoiceField from "@/components/ExperienceEducation/ChoiceField";
 import { skills as skillOptions } from "@/components/ExperienceEducation/experienceOptions";
-import { saveJob } from "@/lib/jobs/actions";
+import { previewNextJobCode, saveJob } from "@/lib/jobs/actions";
 import {
     DEPARTMENTS,
     EMPLOYMENT_TYPES,
@@ -201,6 +201,20 @@ export default function JobForm({ jobId, jobCode, status, heading, initial = emp
     const [formError, setFormError] = useState("");
     const published = status === "published";
 
+    // A new job (create or duplicate) shows the ID it will get when saved.
+    // Only a preview: the database assigns the real one on insert.
+    const [nextCode, setNextCode] = useState("");
+    useEffect(() => {
+        if (jobCode) return;
+        let cancelled = false;
+        previewNextJobCode()
+            .then((result) => !cancelled && result.ok && setNextCode(result.code))
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [jobCode]);
+
     const dirty = JSON.stringify(values) !== JSON.stringify(initial);
     useEffect(() => {
         if (dirtyRef) dirtyRef.current = dirty;
@@ -270,7 +284,7 @@ export default function JobForm({ jobId, jobCode, status, heading, initial = emp
                     <input
                         id="jobCode"
                         readOnly
-                        value={jobCode ?? ""}
+                        value={jobCode ?? nextCode}
                         placeholder="Assigned when saved"
                         className="h-[34px] w-full rounded-lg border border-border-default bg-surface-brand-subtle px-[13px] text-sm text-border-strong outline-none placeholder:text-border-strong"
                     />

@@ -1,8 +1,9 @@
-import nodemailer from "nodemailer";
+import { emailButton, escapeHtml, renderHtml, send } from "./mailer";
 
 // Sends the auth emails (6-digit codes and the account-created welcome) from
 // the app instead of Supabase's mailer. SMTP_* comes from .env.local; without
-// it (local dev) the email is summarised in the `npm run dev` terminal instead.
+// it (local dev) the email is summarised in the `npm run dev` terminal instead
+// (see ./mailer).
 
 const CONTENT = {
     signup: {
@@ -20,63 +21,6 @@ const CONTENT = {
         outro: "This code expires in 1 hour. If you didn't ask to reset your password, ignore this email. Your password will stay the same.",
     },
 };
-
-const escapeHtml = (s) =>
-    s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-
-// The shared card: brand, uppercase title, intro, a middle block (code box or
-// button) and a muted closing line.
-function renderHtml({ title, intro, middle, outro }) {
-    return `<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#0e2b4b;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;">
-            <tr><td style="padding:32px 32px 0;font-size:20px;font-weight:bold;color:#0061af;">Ascendus Careers</td></tr>
-            <tr><td style="padding:24px 32px 0;font-size:14px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">${title}</td></tr>
-            <tr><td style="padding:16px 32px 0;font-size:14px;line-height:20px;">${intro}</td></tr>
-            <tr><td align="center" style="padding:24px 32px;">${middle}</td></tr>
-            <tr><td style="padding:0 32px 32px;font-size:13px;line-height:20px;color:#5c7088;">${outro}</td></tr>
-          </table>
-          <p style="margin:16px 0 0;font-size:12px;color:#5c7088;">&copy; Ascendus Careers Portal</p>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
-}
-
-let transporter;
-function getTransporter() {
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
-    const port = Number(SMTP_PORT || 587);
-    transporter ??= nodemailer.createTransport({
-        host: SMTP_HOST,
-        port,
-        secure: port === 465,
-        auth: { user: SMTP_USER, pass: SMTP_PASS.replace(/\s/g, "") },
-    });
-    return transporter;
-}
-
-// Sends the mail, or prints `devLine` when SMTP_* isn't set.
-async function send({ to, subject, text, html, devLine }) {
-    const smtp = getTransporter();
-    if (!smtp) {
-        console.log(`\n[auth] ${devLine}  (SMTP_* not set, email not sent)\n`);
-        return;
-    }
-    await smtp.sendMail({
-        from: process.env.SMTP_FROM || `"Ascendus Careers" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        text,
-        html,
-    });
-}
 
 // kind: "signup" | "recovery".
 export async function sendCodeEmail(kind, email, code) {
@@ -100,9 +44,7 @@ export async function sendCodeEmail(kind, email, code) {
 export async function sendAccountCreatedEmail(email, firstName, signInUrl) {
     const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : "Hi,";
     const outro = "If you didn't create this account, contact us so we can secure it.";
-    const button = signInUrl
-        ? `<a href="${escapeHtml(signInUrl)}" style="display:inline-block;padding:12px 28px;border-radius:8px;background:#0061af;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Sign In</a>`
-        : "";
+    const button = signInUrl ? emailButton(signInUrl, "Sign In") : "";
     await send({
         to: email,
         subject: "Your Ascendus Careers account is ready",

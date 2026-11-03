@@ -5,7 +5,10 @@
 // RLS (supabase/migrations/20261102000000_hiring.sql) checks again in the
 // database.
 
+import { after } from "next/server";
+
 import { hrSession } from "@/lib/auth/hr";
+import { requestOrigin, sendApplicationReceivedEmail, sendQuietly } from "@/lib/email/hiringEmails";
 import { verifyRecaptcha } from "@/lib/recaptcha/verifyRecaptcha";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,7 +70,12 @@ export async function submitApplication({ jobSlug, captchaToken, stepData, phone
     const email = text(personal.email, 254);
     if (!firstName || !lastName || !email) return { ok: false, error: "Your name and email are missing. Check Personal Details." };
 
-    const { data: job } = await supabase.from("jobs").select("id").eq("slug", jobSlug).eq("status", "published").maybeSingle();
+    const { data: job } = await supabase
+        .from("jobs")
+        .select("id, title, department, location, type_of_work")
+        .eq("slug", jobSlug)
+        .eq("status", "published")
+        .maybeSingle();
     if (!job) return { ok: false, error: "This job is no longer open for applications." };
 
     const { data, error } = await supabase
@@ -89,9 +97,18 @@ export async function submitApplication({ jobSlug, captchaToken, stepData, phone
 
     if (error) {
         if (error.code === "23505") return { ok: false, error: "You have already applied for this job." };
-        console.error("submitApplication:", error);
+        console.error("submitApplication:", error.code, error.message);
         return FAILED;
     }
+
+    // The confirmation email goes out after the response, so the candidate
+    // sees their reference straight away and a mail failure can't undo it.
+    const origin = await requestOrigin();
+    after(() =>
+        sendQuietly("Application received", () =>
+            sendApplicationReceivedEmail({ email, firstName, reference: data.reference, job, origin }),
+        ),
+    );
     return { ok: true, reference: data.reference };
 }
 
